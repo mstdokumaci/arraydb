@@ -1,0 +1,530 @@
+<?php
+	if (!(defined('index_acildi'))) {die('seni tanımıyorum');}
+
+	include_once($_FKOK . '/yapi.php');
+	include_once($_FKOK . '/temel/yapi.php');
+
+	$_NESNE=$_SATIR=$_LISTE=array();
+
+	$var=true;
+	$_YAPI=$_YAPI+$_Y_ilk_tablolar;
+	do {
+		if (!($yapi=cache_ver('__YAPI__'))) {$var=false; break;}
+		if (!($yh=cache_ver('__YAPI_HASH__'))) {$var=false; break;}
+		if ($yh!=md5(serialize($_YAPI))) {$var=false; break;}
+		} while (false);
+	if ($var) {$_YAPI=$yapi;}
+	else {
+		cache_sakla('__YAPI_HASH__', md5(serialize($_YAPI)));
+		foreach ($_YAPI as $isim=>$tablo) {
+			$_YAPI[$isim]=$_YAPI[$isim] + $_Y_tablo;
+			$_YAPI[$isim]['a']=$_YAPI[$isim]['a'] + $_Y_ayar;
+			if (isset($_YAPI[$isim]['a']['kestirme']) && !(isset($_YAPI[$isim]['a']['kestirme']['sayfa']))) {$_YAPI[$isim]['a']['kestirme']['sayfa']=$isim;}
+			foreach ($_YAPI[$isim]['s'] as $s_isim=>$sutun) {
+				$_YAPI[$isim]['s'][$s_isim]=$sutun + $_Y_sutun;
+				$_YAPI[$isim]['s'][$s_isim]=$_YAPI[$isim]['s'][$s_isim] + $_Y_sutun_[$_YAPI[$isim]['s'][$s_isim]['tur']];
+			}
+			foreach ($_YAPI[$isim]['sc'] as $yerel=>$sc) {
+				$_YAPI[$isim]['sc'][$yerel]['yerel']=(is_string($yerel)) ? $yerel : $sc['tur'];
+				if (!(isset($sc['yabanci']))) {$_YAPI[$isim]['sc'][$yerel]['yabanci']=$isim;}
+				$_YAPI[$sc['tur']]['s'][$_YAPI[$isim]['sc'][$yerel]['yabanci']]=array(
+					'tur'=>'sayi',
+					'uzun'=>$_YAPI[$isim]['a']['uzun'],
+					'yabanci'=>array('tur'=>$isim, 'sutun'=>$_YAPI[$isim]['sc'][$yerel]['yerel']),
+					'index'=>true
+				) + $_Y_sutun + $_Y_sutun_['sayi'];
+			}
+			foreach ($_YAPI[$isim]['cc'] as $yerel=>$cc) {
+				$_YAPI[$isim]['cc'][$yerel]['yerel']=(is_string($yerel)) ? $yerel : $cc['tur'];
+				if (!(isset($cc['yabanci']))) {$_YAPI[$isim]['cc'][$yerel]['yabanci']=$isim;}
+				if (!(isset($cc['yardimci']))) {
+					$yardimci=array($_YAPI[$isim]['cc'][$yerel]['yabanci'], $_YAPI[$isim]['cc'][$yerel]['yerel']);
+					sort($yardimci);
+					$_YAPI[$isim]['cc'][$yerel]['yardimci']=implode('_', $yardimci);
+				}
+				if (isset($_YAPI[$isim]['cc'][$yerel]['y'])) {continue;}
+				$_YAPI[$cc['tur']]['cc'][$_YAPI[$isim]['cc'][$yerel]['yabanci']]=array(
+					'y'=>true,
+					'tur'=>$isim,
+					'yerel'=>$_YAPI[$isim]['cc'][$yerel]['yabanci'],
+					'yabanci'=>$_YAPI[$isim]['cc'][$yerel]['yerel'],
+					'yardimci'=>$_YAPI[$isim]['cc'][$yerel]['yardimci']
+				);
+			}
+		}
+		cache_sakla('__YAPI__', $_YAPI);
+	}
+
+	function yukle ($tur, $seri) {
+		global $_YAPI, $_NESNE;
+
+		if (!(isset($_YAPI[$tur]))) {return false;}
+
+		if (isset($_NESNE[$tur][$seri])) {return $_NESNE[$tur][$seri];}
+		elseif ($nesne=cache_ver('nesne_' . $tur . '_' . $seri)) {return $nesne;}
+		$nesne=new tablo($tur, $seri);
+		return ($nesne->hata) ? false : $nesne;
+	}
+
+	function ekle ($tur, $bilgi) {
+		global $baglan, $_YAPI;
+
+		if (!(isset($_YAPI[$tur]))) {return false;}
+		$yapi=$_YAPI[$tur];
+
+		foreach ($bilgi as $a=>$d) {
+			if (!isset($yapi['s'][$a])) {continue;}
+			$s=$yapi['s'][$a];
+			if (isset($s['filtre']) && function_exists($s['filtre'])) {$d=eval('return ' . $s['filtre'] . '($d);');}
+			$d=mysqli_real_escape_string($baglan, $d);
+			$sql[]=$a . "='" . $d . "'";
+		}
+		if ($yapi['a']['tarihler']) {$sql[]="ekle_tarih='" . _GMT_STAMP_ . "'";}
+
+		$sql="INSERT INTO " . $tur . " SET " . implode(', ', $sql);
+		if (!(mysql_sorgu($sql))) {return false;}
+		$seri=intval(mysqli_insert_id($baglan));
+
+		foreach ($bilgi as $a=>$d) {
+			if (!isset($yapi['s'][$a])) {continue;}
+			$s=$yapi['s'][$a];
+			if ($s['yabanci']===false) {continue;}
+			if ($y_tablo=yukle($s['yabanci']['tur'], intval($d))) {$y_tablo->ekle($s['yabanci']['sutun'], $seri);}
+		}
+
+		if (isset($yapi['a']['kestirme']) && isset($bilgi[$yapi['a']['kestirme']['s']])) {
+			kestirme_baslik_ekle($bilgi[$yapi['a']['kestirme']['s']], $yapi['a']['kestirme']['sayfa'], $seri);
+		}
+
+		return $seri;
+	}
+
+	function sil ($tur, $seri) {
+		global $baglan, $_YAPI, $_NESNE, $_SATIR;
+
+		if (!(isset($_YAPI[$tur]))) {return false;}
+		$yapi=$_YAPI[$tur];
+		if (!($tablo=yukle($tur, $seri))) {return false;}
+
+		cache_sil('nesne_' . $tur . '_' . $seri);
+
+		$sql=($yapi['a']['silme'])
+			? "UPDATE " . $tur . " SET sil_tarih='" . _GMT_STAMP_ . "' WHERE seri='" . $seri . "'"
+			: "DELETE FROM " . $tur . " WHERE seri='" . $seri . "'";
+
+		if (mysql_sorgu($sql)) {
+			foreach ($yapi['s'] as $a=>$s) {
+				if ($s['yabanci']===false) {continue;}
+				if ($y_tablo=yukle($s['yabanci']['tur'], $tablo[$a])) {$y_tablo->sil($s['yabanci']['sutun'], $seri);}
+			}
+			foreach ($yapi['sc'] as $sc) {
+				foreach ($tablo[$sc['yerel']] as $sc_seri) {
+					if ($sc_tablo=yukle($sc['tur'], $sc_seri)) {$sc_tablo[$sc['yabanci']]=0;}
+				}
+			}
+			foreach ($yapi['cc'] as $cc) {
+				foreach ($tablo[$cc['yerel']] as $cc_seri) {
+					kopar($tur, $seri, $cc['tur'], $cc_seri, $cc['yardimci']);
+				}
+			}
+			foreach ($yapi['cy'] as $cy) {
+				foreach ($tablo[$cy] as $cy_seri) {
+					cy_kopar($tur, $cy, $seri, $cy_seri);
+				}
+			}
+
+			if (isset($yapi['a']['kestirme'])) {kestirme_baslik_sil($yapi['a']['kestirme']['sayfa'], $seri);}
+
+			unset($_NESNE[$tur][$seri]);
+			unset($_SATIR[$tur][$seri]);
+			cache_sil('nesne_' . $tur . '_' . $seri);
+			return true;
+		} else {return false;}
+	}
+
+	function bagla ($tur1, $seri1, $tur2, $seri2, $yardimci=false) {
+		global $baglan, $_YAPI;
+		$buldum=false;
+		foreach ($_YAPI[$tur1]['cc'] as $cc) {
+			if ($cc['tur']==$tur2 && ($yardimci===false || $cc['yardimci']==$yardimci)) {$buldum=true; break;}
+		}
+		if (!$buldum) {
+			hata_ayikla("Hata: bağlamak için tür ilişkisi bulunamadı, T1: $tur1, S1: $seri1, T2: $tur2, S2: $seri2, Y: $yardimci");
+			return false;
+		}
+		if (!($tablo1=yukle($tur1, $seri1))) {return false;}
+		if (!($tablo2=yukle($tur2, $seri2))) {return false;}
+		if (in_array($seri2, $tablo1[$cc['yerel']])) {return true;}
+		$sql="INSERT INTO " . $cc['yardimci'] . " SET " . $cc['yabanci'] . "='" . $seri1 . "', " . $cc['yerel'] . "='" . $seri2 . "'";
+		if (mysql_sorgu($sql)) {
+			$tablo1->ekle($cc['yerel'], $seri2);
+			$tablo2->ekle($cc['yabanci'], $seri1);
+		}
+	}
+
+	function kopar ($tur1, $seri1, $tur2, $seri2, $yardimci=false) {
+		global $baglan, $_YAPI;
+		$buldum=false;
+		foreach ($_YAPI[$tur1]['cc'] as $cc) {
+			if ($cc['tur']==$tur2 && ($yardimci===false || $cc['yardimci']==$yardimci)) {$buldum=true; break;}
+		}
+		if (!$buldum) {
+			hata_ayikla("Hata: koparmak için tür ilişkisi bulunamadı, T1: $tur1, S1: $seri1, T2: $tur2, S2: $seri2, Y: $yardimci");
+			return false;
+		}
+		$sql="DELETE FROM " . $cc['yardimci'] . " WHERE " . $cc['yabanci'] . "='" . $seri1 . "' AND " . $cc['yerel'] . "='" . $seri2 . "'";
+		if (mysql_sorgu($sql)) {
+			if (!($tablo=yukle($tur1, $seri1))) {return false;}
+			$tablo->sil($cc['yerel'], $seri2);
+			if (!($tablo=yukle($tur2, $seri2))) {return false;}
+			$tablo->sil($cc['yabanci'], $seri1);
+		}
+	}
+
+	function cy_bagla ($tur, $yerel, $seri1, $seri2) {
+		global $baglan, $_YAPI;
+		if (!(in_array($yerel, $_YAPI[$tur]['cy']))) {
+			hata_ayikla("Hata: çift yönlü bağlamak için tür ilişkisi bulunamadı, T: $tur, Y: $yerel, S1: $seri1, S2: $seri2");
+			return false;
+		}
+		$sql="INSERT INTO " . $yerel . " SET " . $tur . "1='" . $seri1 . "', " . $tur . "2='" . $seri2 . "'";
+		if (mysql_sorgu($sql)) {
+			if (!($tablo=yukle($tur, $seri1))) {return false;}
+			$tablo->ekle($yerel, $seri2);
+			if (!($tablo=yukle($tur, $seri2))) {return false;}
+			$tablo->ekle($yerel, $seri1);
+		}
+	}
+
+	function cy_kopar ($tur, $yerel, $seri1, $seri2) {
+		global $baglan, $_YAPI;
+		if (!(in_array($yerel, $_YAPI[$tur]['cy']))) {
+			hata_ayikla("Hata: çift yönlü koparmak için tür ilişkisi bulunamadı, T: $tur, Y: $yerel, S1: $seri1, S2: $seri2");
+			return false;
+		}
+		$sql="DELETE FROM " . $yerel . " WHERE (" . $tur . "1='" . $seri1 . "' AND " . $tur . "2='" . $seri2 . "') OR (" . $tur . "1='" . $seri2 . "' AND " . $tur . "2='" . $seri1 . "')";
+		if (mysql_sorgu($sql)) {
+			if (!($tablo=yukle($tur, $seri1))) {return false;}
+			$tablo->sil($yerel, $seri2);
+			if (!($tablo=yukle($tur, $seri2))) {return false;}
+			$tablo->sil($yerel, $seri1);
+		}
+	}
+
+	function bul ($tur, $sutun, $deger) {
+		global $baglan, $_YAPI;
+
+		if (!(isset($_YAPI[$tur]) && isset($_YAPI[$tur]['s'][$sutun]))) {return false;}
+
+		$sql="SELECT seri FROM " . $tur . " WHERE " . $sutun . "='" . mysqli_real_escape_string($baglan, $deger) . "'" . (($_YAPI[$tur]['a']['silme']) ? " AND sil_tarih=0" : '');
+		return ($satir=mysqli_fetch_assoc(mysql_sorgu($sql))) ? yukle($tur, $satir['seri']) : false;
+	}
+
+	function liste ($tur, $sart=false, $sirala=false, $sinirla=false, $say=false) {
+		global $baglan, $_YAPI, $_SATIR, $_LISTE;
+
+		if (!(isset($_YAPI[$tur]))) {return array();}
+		if (isset($_LISTE[$tur][$sart][$sirala][$sinirla][$say])) {return $_LISTE[$tur][$sart][$sirala][$sinirla][$say];}
+
+		$sq=array();
+		$yapi=$_YAPI[$tur];
+		if ($yapi['a']['silme']) {$sq[]='sil_tarih=0';}
+		if ($sart!==false) {$sq[]='(' . $sart . ')';}
+		$sql='SELECT * FROM ' . $tur;
+		if (count($sq)) {$sql.=' WHERE ' . implode(' AND ', $sq);}
+		if ($sirala!==false) {
+			foreach (explode(',', $sirala) as $p) {
+				$e=explode(' ', trim($p));
+				$p=trim(array_shift($e));
+				if (isset($yapi['s'][$p])) {continue;}
+				foreach ($yapi['sc'] as $sc) {
+					if ($p!=$sc['yerel']) {continue;}
+					$sirala=strtr($sirala, array($p=>"(SELECT COUNT(seri) FROM ". $sc['tur'] . " WHERE " . $sc['yabanci'] . "=" . $tur . ".seri)"));
+					continue 2;
+				}
+				foreach ($yapi['cc'] as $cc) {
+					if ($p!=$cc['yerel']) {continue;}
+					$sirala=strtr($sirala, array($p=>"(SELECT COUNT(seri) FROM ". $cc['yardimci'] . " WHERE " . $cc['yabanci'] . "=" . $tur . ".seri)"));
+					continue 2;
+				}
+				foreach ($yapi['cy'] as $cy) {
+					if ($p!=$cy) {continue;}
+					$sirala=strtr($sirala, array($p=>"(SELECT COUNT(seri) FROM ". $cy . " WHERE " . $tur . "1=" . $tur . ".seri OR " . $tur . "2=" . $tur . ".seri)"));
+					continue 2;
+				}
+			}
+			$sql.=" ORDER BY " . mysqli_real_escape_string($baglan, $sirala);
+		}
+		if ($sinirla!==false) {$sql.=" LIMIT " . mysqli_real_escape_string($baglan, $sinirla);}
+		$donus=$_LISTE[$tur][$sart][$sirala][$sinirla][$say]=array();
+		if (!($tablo=mysql_sorgu($sql))) {return ($say) ? 0 : $donus;}
+		if ($say) {return mysqli_num_rows($tablo);}
+		while ($satir=mysqli_fetch_assoc($tablo)) {
+			$_SATIR[$tur][intval($satir['seri'])]=$satir;
+			$donus[]=intval($satir['seri']);
+		}
+		$_LISTE[$tur][$sart][$sirala][$sinirla][$say]=$donus;
+		return $donus;
+	}
+
+	class tablo implements arrayaccess {
+		private $tur, $seri, $bilgi;
+		public $hata=false;
+
+		function __construct ($tur, $seri) {
+			global $_YAPI, $_SATIR, $baglan;
+			if (!(isset($_YAPI[$tur]))) {return false;}
+			$this->tur=$tur;
+			$yapi=$_YAPI[$tur];
+			$this->seri=$seri;
+			$this->bilgi=array('seri'=>$seri, '_yetki_'=>0, 'ip'=>'', 'lisan'=>'tr');
+			$sql="SELECT * FROM " . $tur . " WHERE seri='" . $this->seri . "'" . (($yapi['a']['silme']) ? " AND sil_tarih=0" : '');
+			if (isset($_SATIR[$tur][$seri])) {$satir=$_SATIR[$tur][$seri];}
+			elseif (!($satir=mysqli_fetch_assoc(mysql_sorgu($sql)))) {$this->hata=true; return false;}
+			$this->bilgi=$satir+$this->bilgi;
+
+			foreach ($yapi['st'] as $st) {$this->bilgi[$st]=bul($st, $tur, $seri);}
+			foreach ($yapi['sc'] as $sc) {$this->bilgi[$sc['yerel']]=liste($sc['tur'], $sc['yabanci'] . "='" . $seri . "'");}
+			foreach ($yapi['cc'] as $cc) {
+				$sql="SELECT " . $cc['yerel'] . " FROM " . $cc['yardimci'] . " WHERE " . $cc['yabanci'] . "='" . $seri . "'";
+				$this->bilgi[$cc['yerel']]=array();
+				if (!$tablo=mysql_sorgu($sql)) {continue;}
+				while ($satir=mysqli_fetch_assoc($tablo)) {$this->bilgi[$cc['yerel']][]=intval($satir[$cc['yerel']]);}
+			}
+			foreach ($yapi['cy'] as $cy) {
+				$sql="(SELECT " . $tur . "1 AS seri FROM " . $cy . " WHERE " . $tur . "2='" . $seri . "')";
+				$sql.="UNION (SELECT " . $tur . "2 AS seri FROM " . $cy . " WHERE " . $tur . "1='" . $seri . "')";
+				$this->bilgi[$cy]=array();
+				if (!$tablo=mysql_sorgu($sql)) {continue;}
+				while ($satir=mysqli_fetch_assoc($tablo)) {
+					$this->bilgi[$cy][]=intval($satir['seri']);
+				}
+			}
+			$this->kaydet();
+		}
+
+
+		/** OFFSET FONKSİYONLARI **/
+
+		function offsetexists ($ne) {return isset($this->bilgi[$ne]);}
+
+		function offsetget ($ne) {
+			return (isset($this->bilgi[$ne])) ? $this->bilgi[$ne] : false;
+		}
+
+		function offsetset ($ne, $deger) {
+			global $baglan, $_YAPI;
+			$yapi=$_YAPI[$this->tur];
+			if (!(isset($yapi['s'][$ne]))) {
+				if (in_array($ne, array('_yetki_', 'ip', 'lisan'))) {
+					$this->bilgi[$ne]=$deger;
+					$this->kaydet();
+					return true;
+				} else {return false;}
+			}
+			$s=$yapi['s'][$ne];
+			if (isset($s['filtre']) && function_exists($s['filtre'])) {$deger=eval('return ' . $s['filtre'] . '($deger);');}
+			$sql="UPDATE " . $this->tur . " SET " . $ne . "='" . mysqli_real_escape_string($baglan, $deger) . "'" . (($yapi['a']['tarihler']) ? ", degis_tarih='" . _GMT_STAMP_ . "'" : '') . " WHERE seri='" . $this->seri . "'";
+			if (mysql_sorgu($sql)) {
+				if ($s['yabanci']!==false) {
+					if ($y_tablo=yukle($s['yabanci']['tur'], $this->bilgi[$ne])) {$y_tablo->sil($s['yabanci']['sutun'], $this->seri);}
+					if ($y_tablo=yukle($s['yabanci']['tur'], $deger)) {$y_tablo->ekle($s['yabanci']['sutun'], $this->seri);}
+				}
+				$this->bilgi[$ne]=$deger;
+				if ($yapi['a']['tarihler']) {$this->bilgi['degis_tarih']=_GMT_STAMP_;}
+				if (isset($yapi['a']['kestirme']) && $ne==$yapi['a']['kestirme']['s']) {
+					kestirme_baslik_ekle($deger, $yapi['a']['kestirme']['sayfa'], $this->seri);
+				}
+			}
+			$this->kaydet();
+			return true;
+		}
+
+		function offsetunset ($ne) {
+			return false;
+		}
+
+		function ekle ($ne, $seri) {
+			$seri=intval($seri);
+			if (!(isset($this->bilgi[$ne]) && is_array($this->bilgi[$ne])) || in_array($seri, $this->bilgi[$ne])) {return false;}
+			$this->bilgi[$ne][]=$seri;
+			$this->kaydet();
+		}
+
+		function sil ($ne, $seri) {
+			$seri=intval($seri);
+			if (!(isset($this->bilgi[$ne]) && is_array($this->bilgi[$ne]) && !in_array($seri, $this->bilgi[$ne]))) {return false;}
+			unset($this->bilgi[$ne][array_search($seri, $this->bilgi[$ne])]);
+			$this->kaydet();
+		}
+
+		function duzenle ($bilgi) {
+			global $baglan, $_YAPI;
+			$yapi=$_YAPI[$this->tur];
+			$sql=array();
+			foreach ($bilgi as $ne=>$deger) {
+				if (!(isset($yapi['s'][$ne]))) {
+					if (in_array($ne, array('_yetki_', 'ip', 'lisan'))) {$this->bilgi[$ne]=$deger;}
+					continue;
+				}
+				$s=$yapi['s'][$ne];
+				if (isset($s['filtre']) && function_exists($s['filtre'])) {$deger=eval('return ' . $s['filtre'] . '($deger);');}
+				if ($s['yabanci']!==false) {
+					if ($y_tablo=yukle($s['yabanci']['tur'], $this->bilgi[$ne])) {$y_tablo->sil($s['yabanci']['sutun'], $this->seri);}
+					if ($y_tablo=yukle($s['yabanci']['tur'], $deger)) {$y_tablo->ekle($s['yabanci']['sutun'], $this->seri);}
+				}
+				$sql[]=$ne . "='" . mysqli_real_escape_string($baglan, $deger) . "'";
+				$this->bilgi[$ne]=$deger;
+				if (isset($yapi['a']['kestirme']) && $ne==$yapi['a']['kestirme']['s']) {
+					kestirme_baslik_ekle($deger, $yapi['a']['kestirme']['sayfa'], $this->seri);
+				}
+			}
+			if (count($sql)) {
+				$sql="UPDATE " . $this->tur . " SET " . implode(", ", $sql) . (($yapi['a']['tarihler']) ? ", degis_tarih='" . _GMT_STAMP_ . "'" : '') . " WHERE seri='" . $this->seri . "'";
+				mysql_sorgu($sql);
+				if ($yapi['a']['tarihler']) {$this->bilgi['degis_tarih']=_GMT_STAMP_;}
+			}
+			$this->kaydet();
+		}
+
+		function liste ($ne, $sart=false, $sirala=false, $sinirla=false, $say=false) {
+			global $_YAPI;
+			if (!(isset($this->bilgi[$ne]) && is_array($this->bilgi[$ne]))) {return false;}
+			$yapi=$_YAPI[$this->tur];
+			foreach ($yapi['sc'] as $sc) {
+				if ($ne!=$sc['yerel']) {continue;}
+				$sql[]=$sc['yabanci'] . "='" . $this->seri . "'";
+				if ($sart!==false) {$sql[]='(' . $sart . ')';}
+				return liste($sc['tur'], implode(' AND ', $sql), $sirala, $sinirla, $say);
+			}
+			foreach ($yapi['cc'] as $cc) {
+				if ($ne!=$cc['yerel']) {continue;}
+				$sql[]="seri IN (SELECT " . $cc['yerel'] . " FROM " . $cc['yardimci'] . " WHERE " . $cc['yabanci'] . "='" . $this->seri . "')";
+				if ($sart!==false) {$sql[]='(' . $sart . ')';}
+				return liste($cc['tur'], implode(' AND ', $sql), $sirala, $sinirla, $say);
+			}
+			foreach ($yapi['cy'] as $cy) {
+				if ($ne!=$cy) {continue;}
+				$sql[0]="(SELECT " . $this->tur . "1 AS seri FROM " . $cy . " WHERE " . $this->tur . "2='" . $this->seri . "')";
+				$sql[0].="UNION (SELECT " . $this->tur . "2 AS seri FROM " . $cy . " WHERE " . $this->tur . "1='" . $this->seri . "')";
+				if ($sart!==false) {$sql[]='(' . $sart . ')';}
+				return liste($this->tur, implode(' AND ', $sql), $sirala, $sinirla, $say);
+			}
+		}
+
+		private function kaydet () {
+			global $_NESNE, $_YAPI;
+			$_NESNE[$this->tur][$this->seri]=$this;
+			cache_sakla('nesne_' . $this->tur . '_' . $this->seri, $this, $_YAPI[$this->tur]['a']['mzaman']);
+		}
+
+
+		/** OTURUM FONKSİYONLARI **/
+
+		function sifre_dogru ($sifre, $ip='') {
+			global $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			if (function_exists($_YAPI[$this->tur]['s']['sifre']['filtre'])) {$sifre=eval('return ' . $_YAPI[$this->tur]['s']['sifre']['filtre'] . '($sifre);');}
+			if ($ip=='') {return ($sifre===$this->bilgi['sifre']);}
+			if (!($gtekrar=cache_ver('giris_tekrar'))) {$gtekrar=array();}
+			if (!(isset($gtekrar[$ip]))) {$gtekrar[$ip]=0;}
+			if ($gtekrar[$ip]>99) {$this->logla(2); return 400;}
+			if ($sifre!==$this->bilgi['sifre']) {
+				$this->logla(1);
+				$gtekrar[$ip]++;
+				cache_sakla('giris_tekrar', $gtekrar);
+				return 300;
+			}
+			return 200;
+		}
+
+		function oturum_ac ($ip, $lisan) {
+			global $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			if ($this->bilgi['_yetki_']) {return false;}
+			$this->bilgi['_yetki_']=(function_exists($this->tur . '_yetki')) ? eval('return ' . $this->tur . '_yetki($this);') : 1;
+			$this->bilgi['_basla_tarih_']=_GMT_STAMP_;
+			$this->offsetset('ip', $ip);
+			$this->offsetset('lisan', $lisan);
+			$this->hareket_etti();
+			$this->kaydet();
+			return true;
+		}
+
+		function hareket_etti () {
+			global $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			if (!($this->bilgi['_yetki_'])) {return false;}
+			if (!($oturum_hareket=cache_ver('oturum_hareket'))) {$oturum_hareket=array();}
+			$oturum_hareket[$this->tur][$this->seri]=_GMT_STAMP_;
+			cache_sakla('oturum_hareket', $oturum_hareket);
+			$this->kaydet();
+			return true;
+		}
+
+		function oturum_kapat () {
+			global $baglan, $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			if (!($this->bilgi['_yetki_'])) {return false;}
+
+			if (!($oturum_hareket=cache_ver('oturum_hareket'))) {$oturum_hareket=array();}
+			$sql="INSERT INTO " . $this->tur . "_oturum SET " . $this->tur . "='" . $this->seri . "', ip='" . $this->bilgi['ip'] . "', basla_tarih='" . $this->bilgi['_basla_tarih_'] . "', sure='" . (_GMT_STAMP_-$this->bilgi['_basla_tarih_']) . "'";
+			mysql_sorgu($sql);
+			unset($oturum_hareket[$this->tur][$this->seri]);
+			cache_sakla('oturum_hareket', $oturum_hareket);
+
+			unset($this->bilgi['lisan']);
+			$this->bilgi['_yetki_']=0;
+			$this->kaydet();
+			return true;
+		}
+
+		function oturum_ver ($basla, $bit) {
+			global $baglan, $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			$sql="SELECT * FROM " . $this->tur . "_oturum WHERE " . $this->tur . "='" . $this->seri . "' AND (basla_tarih BETWEEN '" . $basla . "' AND '" . $bit . "') ORDER BY basla_tarih";
+			if (!($tablo=mysql_sorgu($sql))) {return false;}
+			$oturum_ver=array();
+			while ($satir=mysqli_fetch_assoc($tablo)) {
+				$oturum_ver[]=array('ip'=>$satir['ip'], 'basla_tarih'=>$satir['basla_tarih'], 'sure'=>$satir['sure']);
+			}
+			return $oturum_ver;
+		}
+
+		function oturum_rapor () {
+			global $baglan, $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			$sql="SELECT SUM(sure) AS toplam_sure, COUNT(seri) AS toplam_adet, MAX(sure) AS en_uzun_sure FROM " . $this->tur . "_oturum WHERE " . $this->tur . "='" . $this->seri . "'";
+			if (!($satir=mysqli_fetch_assoc(mysql_sorgu($sql)))) {return false;}
+			$oturum_rapor=array('toplam_sure'=>$satir['toplam_sure'], 'toplam_adet'=>$satir['toplam_adet'], 'en_uzun_sure'=>$satir['en_uzun_sure']);
+			$sql="SELECT * FROM " . $this->tur . "_oturum WHERE " . $this->tur . "='" . $this->seri . "' AND sure='" . $satir['en_uzun_sure'] . "'";
+			if (!($satir=mysqli_fetch_assoc(mysql_sorgu($sql)))) {return false;}
+			$oturum_rapor['en_uzun_sure_basla']=$satir['tarih'];
+			return $oturum_rapor;
+		}
+
+
+		/** LOG FONKSİYONLARI **/
+
+		function logla ($olay) {
+			global $baglan, $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			$sql="INSERT INTO " . $this->tur . "_log SET " . $this->tur . "='" . $this->seri . "', ip='" . $this->bilgi['ip'] . "', tarih='" . _GMT_STAMP_ . "', olay='" . $olay . "'";
+			mysql_sorgu($sql);
+			return true;
+		}
+
+		function log_ver ($basla, $bit) {
+			global $baglan, $_YAPI;
+			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
+			$sql="SELECT * FROM " . $this->tur . "_log WHERE " . $this->tur . "='" . $this->seri . "' AND (tarih BETWEEN '" . $basla . "' AND '" . $bit . "') ORDER BY tarih";
+			if (!($tablo=mysql_sorgu($sql))) {return false;}
+			$log_ver=array();
+			while ($satir=mysqli_fetch_assoc($tablo)) {
+				$log_ver[]=array('ip'=>$satir['ip'], 'tarih'=>$satir['tarih'], 'olay'=>$satir['olay']);
+			}
+			return $log_ver;
+		}
+
+	}
+	?>
