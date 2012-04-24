@@ -45,7 +45,7 @@
 						$m2m['relation_name']=implode('_', $relation_name);
 					}
 					if (!isset($this->DM[$name]['many_to_many'][$local_name]['done'])) {
-						$this->DM[$has_many['type']]['many_to_many'][$has_many['foreign_name']]=array(
+						$this->DM[$m2m['type']]['many_to_many'][$m2m['foreign_name']]=array(
 							'done'=>true,
 							'type'=>$name,
 							'local_name'=>$m2m['foreign_name'],
