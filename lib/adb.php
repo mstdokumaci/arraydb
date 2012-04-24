@@ -37,6 +37,7 @@
 				}
 
 				foreach ($array['many_to_many'] as $local_name=>$m2m) {
+					if (isset($this->DM[$name]['many_to_many'][$local_name]['done'])) continue;
 					$m2m['local_name']=is_string($local_name) ? $local_name : $m2m['type'];
 					if (!isset($m2m['foreign_name'])) $m2m['foreign_name']=$name;
 					if (!isset($m2m['relation_name'])) {
@@ -44,15 +45,13 @@
 						sort($relation_name);
 						$m2m['relation_name']=implode('_', $relation_name);
 					}
-					if (!isset($this->DM[$name]['many_to_many'][$local_name]['done'])) {
-						$this->DM[$m2m['type']]['many_to_many'][$m2m['foreign_name']]=array(
-							'done'=>true,
-							'type'=>$name,
-							'local_name'=>$m2m['foreign_name'],
-							'foreign_name'=>$m2m['local_name'],
-							'relation_name'=>$m2m['relation_name']
-						);
-					}
+					$this->DM[$m2m['type']]['many_to_many'][$m2m['foreign_name']]=array(
+						'done'=>true,
+						'type'=>$name,
+						'local_name'=>$m2m['foreign_name'],
+						'foreign_name'=>$m2m['local_name'],
+						'relation_name'=>$m2m['relation_name']
+					);
 					$array['many_to_many'][$local_name]=$m2m;
 				}
 
