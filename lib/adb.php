@@ -3,9 +3,12 @@
 	class ADB {
 		private $ITEM, $ROW, $LIST;
 		private $DM;
+		private $db;
 
-		function __construct ($DM) {
+		function __construct ($DM, $conf) {
 			$this->ITEM=$this->ROW=$this->LIST=array();
+			$this->db=new DB($conf);
+
 			$cached_dm=cache::get('__DATA_MODEL__');
 			$cached_hash=cache::get('__DATA_MODEL_HASH__');
 			if ($cached_dm!==false && $cached_hash!==false && $cached_hash==md5(serialize($DM))) {
@@ -72,6 +75,33 @@
 			return $ITEM;
 		}
 
+		function create ($name, $data) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+
+			$item=$this->DM[$name];
+
+			$insert=$foreigns=array();
+			foreach ($data as $k=>$v) {
+				if (!isset($item['fields'][$k])) {continue;}
+				$field=$item['fields'][$k];
+				if (isset($field['filter']) && function_exists($field['filter'])) {$v=eval('return ' . $field['filter'] . '($v);');}
+				$insert[$k]=$v;
+				if ($field['foreign']!==false) {
+					$field['foreign']['id']=$v;
+					$foreigns[]=$field['foreign'];
+				}
+			}
+			$insert['create_date']=$_SERVER['REQUEST_TIME'];
+
+			$id=$this->db->insert($name, $insert);
+
+			foreach ($foreigns as $foreign) {
+				$foreign_item=$this->load($foreign['type'], intval($foreign['id']));
+				$foreign_item->add_belong($foreign['field'], $id);
+			}
+
+			return $id;
+		}
 
 		private function get_initial_item () {
 			static $list=array(
