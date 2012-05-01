@@ -78,12 +78,12 @@
 		function create ($name, $data) {
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
-			$item=$this->DM[$name];
+			$item_model=$this->DM[$name];
 
 			$insert=$foreigns=array();
 			foreach ($data as $k=>$v) {
-				if (!isset($item['fields'][$k])) {continue;}
-				$field=$item['fields'][$k];
+				if (!isset($item_model['fields'][$k])) {continue;}
+				$field=$item_model['fields'][$k];
 				if (isset($field['filter']) && function_exists($field['filter'])) {$v=eval('return ' . $field['filter'] . '($v);');}
 				$insert[$k]=$v;
 				if ($field['foreign']!==false) {
@@ -97,10 +97,67 @@
 
 			foreach ($foreigns as $foreign) {
 				$foreign_item=$this->load($foreign['type'], intval($foreign['id']));
-				$foreign_item->add_belong($foreign['field'], $id);
+				$foreign_item->add_relation($foreign['field'], $id);
 			}
 
 			return $id;
+		}
+
+		function delete ($name, $id) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+
+			$item_model=$this->DM[$name];
+
+			$item=$this->load($name, $id);
+
+			cache::delete('item_' . $name . '_' . $id);
+
+			$this->db->delete($name, "id='" . $id . "'");
+
+			foreach (array_filter(function ($el) {return $el['foreign']!==false;}, $item_model['fields']) as $k=>$f) {
+				$foreign_item=$this->load($f['foreign']['type'], intval($f['foreign']['id']));
+				$foreign_item->delete_relation($f['foreign']['field'], $id);
+			}
+			foreach ($item_model['has_many'] as $has_many) {
+				foreach ($item[$has_many['local_name']] as $foreign_id) {
+					$foreign_item=$this->load($has_many['type'], $foreign_id);
+					$foreign_item[$has_many['foreign_name']]=0;
+				}
+			}
+			foreach ($item_model['many_to_many'] as $m2m) {
+				foreach ($item[$m2m['local_name']] as $foreign_id) {
+					$this->unrelate($name, $id, $m2m['type'], $foreign_id, $m2m['relation_name']);
+				}
+			}
+			foreach ($item_model['self_ref'] as $self_ref) {
+				foreach ($item[$self_ref] as $self_ref_id) {
+					$this->unrelate_self_ref($name, $self_ref, $id, $self_ref_id);
+				}
+			}
+
+			unset($this->ITEM[$name][$id]);
+			unset($this->ROW[$name][$id]);
+			cache::delete('item_' . $name . '_' . $id);
+		}
+
+		function relate ($name1, $id1, $name2, $id2, $relation_name=false) {
+			$found=false;
+			foreach ($this->DM[$name1]['many_to_many'] as $m2m) {
+				if ($m2m['type']==$name2 && ($relation_name===false || $m2m['relation_name']==$relation_name)) {$found=true; break;}
+			}
+			if (!$found)
+				throw new Exception('No defined relation to relate ' . $name1 . '(' . $id1 . ') to ' . $name2 . '(' . $id2 . ') for ' . $relation_name);
+
+			$item1=$this->load($name1, $id1);
+			$item2=$this->load($name2, $id2);
+
+			if (in_array($id2, $item1[$m2m['local_name']])) {return;}
+
+			$insert=array($m2m['foreign_name']=>$id1, $m2m['local_name']=>$id2);
+			$this->db->insert($m2m['relation_name'], $insert);
+
+			$item1->add_relation($m2m['local_name'], $id2);
+			$item2->add_relation($m2m['foreign_name'], $id1);
 		}
 
 		private function get_initial_item () {
