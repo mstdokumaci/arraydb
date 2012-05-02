@@ -160,6 +160,52 @@
 			$item2->add_relation($m2m['foreign_name'], $id1);
 		}
 
+		function unrelate ($name1, $id1, $name2, $id2, $relation_name=false) {
+			$found=false;
+			foreach ($this->DM[$name1]['many_to_many'] as $m2m) {
+				if ($m2m['type']==$name2 && ($relation_name===false || $m2m['relation_name']==$relation_name)) {$found=true; break;}
+			}
+			if (!$found)
+				throw new Exception('No defined relation to unrelate ' . $name1 . '(' . $id1 . ') from ' . $name2 . '(' . $id2 . ') for ' . $relation_name);
+
+			$item1=$this->load($name1, $id1);
+			$item2=$this->load($name2, $id2);
+
+			$condition=$m2m['foreign_name'] . "='" . $id1 . "' AND " . $m2m['local_name'] . "='" . $id2 . "'";
+			$this->db->delete($m2m['relation_name'], $condition);
+
+			$item1->delete_relation($m2m['local_name'], $id2);
+			$item2->delete_relation($m2m['foreign_name'], $id1);
+		}
+
+		function self_relate ($name, $local_name, $id1, $id2) {
+			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
+				throw new Exception('No defined relation to self relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
+
+			$insert=array($name . '1'=>$id1, $name . '2'=>$id2);
+			$this->db->insert($local_name, $insert);
+
+			$item1=$this->load($name, $id1);
+			$item2=$this->load($name, $id2);
+
+			$item1->add_relation($local_name, $id2);
+			$item2->add_relation($local_name, $id1);
+		}
+
+		function self_unrelate ($name, $local_name, $id1, $id2) {
+			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
+				throw new Exception('No defined relation to self relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
+
+			$item1=$this->load($name, $id1);
+			$item2=$this->load($name, $id2);
+
+			$condition="(" . $name . "1='" . $id1 . "' AND " . $name . "2='" . $id2 . "') OR (" . $name . "1='" . $id2 . "' AND " . $name . "2='" . $id1 . "')";
+			$this->db->delete($local_name, $condition);
+
+			$item1->delete_relation($local_name, $id2);
+			$item2->delete_relation($local_name, $id1);
+		}
+
 		private function get_initial_item () {
 			static $list=array(
 				'conf'=>array(),
