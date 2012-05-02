@@ -206,6 +206,20 @@
 			$item2->delete_relation($local_name, $id1);
 		}
 
+		function find_unique ($name, $field, $value) {
+			if (!(isset($this->DM[$name]) && isset($this->DM[$name]['fields'][$field])))
+				throw new Exception('No field as ' . $field . ' found for item ' . $name);
+
+			$sql="SELECT * FROM " . $name . " WHERE " . $field . "='" . $this->db->escape($value) . "'";
+			$result=$this->db->select($sql);
+			if (count($result)) {
+				$this->ROW[$name][$result[0]['id']]=$result[0];
+				return $this->load($name, $result[0]['id'], $this->ROW[$name][$result[0]['id']]);
+			}
+
+			return false;
+		}
+
 		private function get_initial_item () {
 			static $list=array(
 				'conf'=>array(),

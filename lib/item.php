@@ -4,7 +4,7 @@
 		private $tur, $seri, $bilgi;
 		public $hata=false;
 
-		function __construct ($tur, $seri) {
+		function __construct ($tur, $seri, $row=false) {
 			global $_YAPI, $_SATIR, $baglan;
 			if (!(isset($_YAPI[$tur]))) {return false;}
 			$this->tur=$tur;
