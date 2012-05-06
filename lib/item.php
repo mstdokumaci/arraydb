@@ -1,20 +1,34 @@
 <?php
 
 	class ITEM implements arrayaccess {
-		private $tur, $seri, $bilgi;
-		public $hata=false;
+		private $name, $model, $id, $data;
+		private $db, $cache;
 
-		function __construct ($tur, $seri, $row=false) {
-			global $_YAPI, $_SATIR, $baglan;
-			if (!(isset($_YAPI[$tur]))) {return false;}
-			$this->tur=$tur;
-			$yapi=$_YAPI[$tur];
-			$this->seri=$seri;
-			$this->bilgi=array('seri'=>$seri, '_yetki_'=>0, 'ip'=>'', 'lisan'=>'tr');
-			$sql="SELECT * FROM " . $tur . " WHERE seri='" . $this->seri . "'" . (($yapi['a']['silme']) ? " AND sil_tarih=0" : '');
-			if (isset($_SATIR[$tur][$seri])) {$satir=$_SATIR[$tur][$seri];}
-			elseif (!($satir=mysqli_fetch_assoc(mysql_sorgu($sql)))) {$this->hata=true; return false;}
-			$this->bilgi=$satir+$this->bilgi;
+		function __construct ($name, $model, $id, $data_type='no-data', $data=false) {
+			$this->db=DB::get_instance();
+			$this->cache=CACHE::get_instance();
+
+			$this->name=$name;
+			$this->model=$model;
+			$this->id=$id;
+
+			switch ($data_type) {
+				case 'no-data':
+					$sql="SELECT * FROM " . $name . " WHERE id='" . $id . "'";
+					$result=$this->db->select($sql);
+					if (!count($result))
+						throw new Exception('No ' . $name . ' found with id ' . $id);
+
+					$this->data=$result[0];
+					break;
+				case 'db-row':
+					$this->data=$data;
+					break;
+				case 'cached':
+					$this->data=$data;
+					return;
+			}
+
 
 			foreach ($yapi['st'] as $st) {$this->bilgi[$st]=bul($st, $tur, $seri);}
 			foreach ($yapi['sc'] as $sc) {$this->bilgi[$sc['yerel']]=liste($sc['tur'], $sc['yabanci'] . "='" . $seri . "'");}

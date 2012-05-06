@@ -2,12 +2,13 @@
 
 	class ADB {
 		private $ITEM, $ROW, $LIST;
+		private $db, $cache;
 		private $DM;
-		private $db;
 
-		function __construct ($DM, $conf) {
+		function __construct ($DM) {
 			$this->ITEM=$this->ROW=$this->LIST=array();
-			$this->db=new DB($conf);
+			$this->db=DB::get_instance();
+			$this->cache=CACHE::get_instance();
 
 			$cached_dm=cache::get('__DATA_MODEL__');
 			$cached_hash=cache::get('__DATA_MODEL_HASH__');
@@ -68,11 +69,14 @@
 		function load ($name, $id) {
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
-			if (isset($this->ITEM[$name][$id])) return $this->ITEM[$name][$id];
-			elseif ($item=cache::get('item_' . $name . '_' . $id)) return $item;
-
-			$item=new ITEM($name, $id);
-			return $ITEM;
+			if (isset($this->ITEM[$name][$id]))
+				return $this->ITEM[$name][$id];
+			elseif ($data=cache::get('item_' . $name . '_' . $id))
+				return new ITEM($name, $this->DM[$name], $id, 'cached', $data);
+			elseif (isset($this->ROW[$name][$id]))
+				return new ITEM($name, $this->DM[$name], $id, 'db-row', $this->ROW[$name][$id]);
+			else
+				return new ITEM($name, $this->DM[$name], $id, 'no-data');
 		}
 
 		function create ($name, $data) {
