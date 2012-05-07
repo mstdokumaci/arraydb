@@ -32,6 +32,12 @@
 			return mysqli_fetch_all($result, MYSQLI_ASSOC);
 		}
 
+		function count ($sql) {
+			if (!$result=mysqli_query($this->conn, $sql))
+				throw new Exception('MySQL select query error: ' . mysqli_error($this->conn));
+			return mysqli_num_rows($result, MYSQLI_ASSOC);
+		}
+
 		function escape ($value) {
 			return mysqli_real_escape_string($this->conn, $value);
 		}

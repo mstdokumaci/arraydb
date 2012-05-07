@@ -1,9 +1,9 @@
 <?php
 
 	class ADB {
-		private $ITEM, $ROW, $LIST;
+		private $ITEM, $ROW, $COUNT, $LIST;
 		private $DM;
-		private $db;
+		public $db;
 
 		function __construct ($DM, $conf) {
 			$this->ITEM=$this->ROW=$this->LIST=array();
@@ -71,7 +71,7 @@
 			if (isset($this->ITEM[$name][$id])) return $this->ITEM[$name][$id];
 			elseif ($item=cache::get('item_' . $name . '_' . $id)) return $item;
 
-			$item=new ITEM($name, $id);
+			$item=new ITEM($name, $id, isset($this->ROW[$name][$id]) ? $this->ROW[$name][$id] : false);
 			return $ITEM;
 		}
 
@@ -141,6 +141,9 @@
 		}
 
 		function relate ($name1, $id1, $name2, $id2, $relation_name=false) {
+			if (!isset($this->DM[$name1])) throw new Exception('Undefined item name: ' . $name1);
+			if (!isset($this->DM[$name2])) throw new Exception('Undefined item name: ' . $name2);
+
 			$found=false;
 			foreach ($this->DM[$name1]['many_to_many'] as $m2m) {
 				if ($m2m['type']==$name2 && ($relation_name===false || $m2m['relation_name']==$relation_name)) {$found=true; break;}
@@ -161,6 +164,9 @@
 		}
 
 		function unrelate ($name1, $id1, $name2, $id2, $relation_name=false) {
+			if (!isset($this->DM[$name1])) throw new Exception('Undefined item name: ' . $name1);
+			if (!isset($this->DM[$name2])) throw new Exception('Undefined item name: ' . $name2);
+
 			$found=false;
 			foreach ($this->DM[$name1]['many_to_many'] as $m2m) {
 				if ($m2m['type']==$name2 && ($relation_name===false || $m2m['relation_name']==$relation_name)) {$found=true; break;}
@@ -179,6 +185,8 @@
 		}
 
 		function self_relate ($name, $local_name, $id1, $id2) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
 				throw new Exception('No defined relation to self relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
 
@@ -193,6 +201,8 @@
 		}
 
 		function self_unrelate ($name, $local_name, $id1, $id2) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
 				throw new Exception('No defined relation to self relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
 
@@ -207,7 +217,9 @@
 		}
 
 		function find_unique ($name, $field, $value) {
-			if (!(isset($this->DM[$name]) && isset($this->DM[$name]['fields'][$field])))
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+
+			if (!isset($this->DM[$name]['fields'][$field]))
 				throw new Exception('No field as ' . $field . ' found for item ' . $name);
 
 			$sql="SELECT * FROM " . $name . " WHERE " . $field . "='" . $this->db->escape($value) . "'";
@@ -218,6 +230,89 @@
 			}
 
 			return false;
+		}
+
+		function count ($name, $condition=false, $order=false) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+
+			if (isset($this->COUNT[$name][$condition])) return $this->COUNT[$name][$condition];
+
+			$item_model=$this->DM[$name];
+			$sql='SELECT * FROM ' . $name;
+			if ($condition!==false) $sql.=' WHERE ' . $condition;
+
+			if ($order!==false) {
+				foreach (explode(',', $order) as $p) {
+					$p=trim(array_shift(explode(' ', trim($p))));
+					if (isset($item_model['fields'][$p])) {continue;}
+					foreach ($item_model['has_many'] as $has_many) {
+						if ($p!=$has_many['local_name']) {continue;}
+						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $has_many['type'] . " WHERE " . $has_many['foreign_name'] . "=" . $name . ".id)"));
+						continue 2;
+					}
+					foreach ($item_model['many_to_many'] as $m2m) {
+						if ($p!=$m2m['local_name']) {continue;}
+						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
+						continue 2;
+					}
+					foreach ($item_model['self_ref'] as $self_ref) {
+						if ($p!=$self_ref) {continue;}
+						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
+						continue 2;
+					}
+				}
+				$sql.=" ORDER BY " . $order;
+			}
+
+			$this->COUNT[$name][$condition]=$this->db->count($sql);
+
+			return $this->COUNT[$name][$condition];
+		}
+
+		function id_list ($name, $condition=false, $order=false, $limit=false) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+
+			if (isset($this->LIST[$name][$condition][$order][$limit])) return $this->LIST[$name][$condition][$order][$limit];
+
+			$item_model=$this->DM[$name];
+			$sql='SELECT * FROM ' . $name;
+			if ($condition!==false) $sql.=' WHERE ' . $condition;
+
+			if ($order!==false) {
+				foreach (explode(',', $order) as $p) {
+					$p=trim(array_shift(explode(' ', trim($p))));
+					if (isset($item_model['fields'][$p])) {continue;}
+					foreach ($item_model['has_many'] as $has_many) {
+						if ($p!=$has_many['local_name']) {continue;}
+						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $has_many['type'] . " WHERE " . $has_many['foreign_name'] . "=" . $name . ".id)"));
+						continue 2;
+					}
+					foreach ($item_model['many_to_many'] as $m2m) {
+						if ($p!=$m2m['local_name']) {continue;}
+						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
+						continue 2;
+					}
+					foreach ($item_model['self_ref'] as $self_ref) {
+						if ($p!=$self_ref) {continue;}
+						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
+						continue 2;
+					}
+				}
+				$sql.=" ORDER BY " . $order;
+			}
+
+			if ($limit!==false) {$sql.=" LIMIT " . $limit;}
+
+			$return=$this->LIST[$name][$condition][$order][$limit]=array();
+
+			foreach ($this->db->select($sql) as $row) {
+				$this->ROW[$name][intval($row['id'])]=$row;
+				$return[]=intval($row['id']);
+			}
+
+			$this->LIST[$name][$condition][$order][$limit]=$return;
+
+			return $return;
 		}
 
 		private function get_initial_item () {
