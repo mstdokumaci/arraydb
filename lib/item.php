@@ -2,10 +2,11 @@
 
 	class ITEM implements arrayaccess {
 		private $name, $model, $id, $data;
-		private $db, $cache;
+		private $db, $adb, $cache;
 
 		function __construct ($name, $model, $id, $row=false) {
 			$this->db=DB::get_instance();
+			$this->adb=ADB::get_instance();
 			$this->cache=CACHE::get_instance();
 
 			$this->name=$name;
@@ -28,8 +29,8 @@
 				$this->data=$result[0];
 			}
 
-			foreach ($yapi['st'] as $st) {$this->bilgi[$st]=bul($st, $tur, $seri);}
-			foreach ($yapi['sc'] as $sc) {$this->bilgi[$sc['yerel']]=liste($sc['tur'], $sc['yabanci'] . "='" . $seri . "'");}
+			foreach ($this->model['has_many'] as $has_many) {$this->data[$has_many['local_name']]=$this->adb->id_list($has_many['type'], $has_many['foreign_name'] . "='" . $this->id . "'");}
+
 			foreach ($yapi['cc'] as $cc) {
 				$sql="SELECT " . $cc['yerel'] . " FROM " . $cc['yardimci'] . " WHERE " . $cc['yabanci'] . "='" . $seri . "'";
 				$this->bilgi[$cc['yerel']]=array();

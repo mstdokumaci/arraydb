@@ -237,7 +237,7 @@
 			$result=$this->db->select($sql);
 			if (count($result)) {
 				$this->ROW[$name][$result[0]['id']]=$result[0];
-				return $this->load($name, $result[0]['id'], $this->ROW[$name][$result[0]['id']]);
+				return $this->load($name, $result[0]['id']);
 			}
 
 			return false;
@@ -329,7 +329,6 @@
 		private function get_initial_item () {
 			static $list=array(
 				'conf'=>array(),
-				'has_one'=>array(),
 				'has_many'=>array(),
 				'many_to_many'=>array(),
 				'self_ref'=>array(),
