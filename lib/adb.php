@@ -22,10 +22,11 @@
 
 			foreach ($DM as $name=>$item) {
 				$item=$item+$this->get_initial_item();
-				$item['conf']=$item['conf']+$this->get_initial_config();
+				$item['conf']+=$this->get_initial_config();
+				$item['fields']+=$this->get_initial_fields();
 
 				foreach ($item['fields'] as $f_name=>$field) {
-					$field=$field+$this->get_initial_field_data($field['type']);
+					$field+=$this->get_initial_field_data($field['type']);
 					$item['fields'][$f_name]=$field;
 				}
 
@@ -37,7 +38,7 @@
 						'len'=>$item['conf']['len'],
 						'foreign'=>array('type'=>$name, 'field'=>$has_many['local_name']),
 						'index'=>true
-					) + get_initial_field_data($field['type']);
+					) + get_initial_field_data('numeric');
 					$item['has_many'][$local_name]=$has_many;
 				}
 
@@ -341,6 +342,20 @@
 			static $list=array(
 				'len'=>5,
 				'ttl'=>3600,
+			);
+			return $list;
+		}
+
+		private function get_initial_fields () {
+			static $list=array(
+				'create_date'=>array(
+					'type'=>'numeric',
+					'len'=>11
+				),
+				'update_date'=>array(
+					'type'=>'numeric',
+					'len'=>11
+				)
 			);
 			return $list;
 		}

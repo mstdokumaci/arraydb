@@ -95,7 +95,7 @@
 		function add_relation ($field, $id) {
 			$id=intval($id);
 			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
-				throw new Exception($field . ' is not a many to many relation field');
+				throw new Exception($field . ' is not a relation field');
 
 			if (in_array($id, $this->data[$field])) return false;
 
@@ -106,7 +106,7 @@
 		function delete_relation ($field, $id) {
 			$id=intval($id);
 			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
-				throw new Exception($field . ' is not a many to many relation field');
+				throw new Exception($field . ' is not a relation field');
 
 			if (!in_array($id, $this->data[$field])) return false;
 
@@ -114,39 +114,71 @@
 			$this->save();
 		}
 
-		function duzenle ($bilgi) {
-			global $baglan, $_YAPI;
-			$yapi=$_YAPI[$this->tur];
+		function update ($data) {
+			$update=$foreigns=array();
+
+			foreach ($data as $k=>$v) {
+				if (!isset($this->model['fields'][$k])) {continue;}
+
+				$field=$item_model['fields'][$k];
+				if (isset($field['filter']) && function_exists($field['filter'])) {$v=eval('return ' . $field['filter'] . '($v);');}
+
+				$update[$k]=$v;
+
+				if ($field['foreign']!==false) {
+					$field['foreign']['id']=$v;
+					$foreigns[$k]=$field['foreign'];
+				}
+			}
+			$update['update_date']=$_SERVER['REQUEST_TIME'];
+
+			$this->db->update($this->name, $update, "id='" . $this->id . "'");
+
+			foreach ($foreigns as $k=>$foreign) {
+				$foreign_item=$this->load($foreign['type'], intval($this->data[$k]));
+				$foreign_item->delete_relation($foreign['field'], $this->id);
+
+				$foreign_item=$this->load($foreign['type'], intval($foreign['id']));
+				$foreign_item->add_relation($foreign['field'], $this->id);
+			}
+
+			$this->data['update_date']=$_SERVER['REQUEST_TIME'];
+			$this->data=$update + $this->data;
+
+			$this->save();
+		}
+
+		function count ($field, $condition=false, $order=false) {
+			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
+				throw new Exception($field . ' is not a relation field');
+
 			$sql=array();
-			foreach ($bilgi as $ne=>$deger) {
-				if (!(isset($yapi['s'][$ne]))) {
-					if (in_array($ne, array('_yetki_', 'ip', 'lisan'))) {$this->bilgi[$ne]=$deger;}
-					continue;
-				}
-				$s=$yapi['s'][$ne];
-				if (isset($s['filtre']) && function_exists($s['filtre'])) {$deger=eval('return ' . $s['filtre'] . '($deger);');}
-				if ($s['yabanci']!==false) {
-					if ($y_tablo=yukle($s['yabanci']['tur'], $this->bilgi[$ne])) {$y_tablo->sil($s['yabanci']['sutun'], $this->seri);}
-					if ($y_tablo=yukle($s['yabanci']['tur'], $deger)) {$y_tablo->ekle($s['yabanci']['sutun'], $this->seri);}
-				}
-				$sql[]=$ne . "='" . mysqli_real_escape_string($baglan, $deger) . "'";
-				$this->bilgi[$ne]=$deger;
-				if (isset($yapi['a']['kestirme']) && $ne==$yapi['a']['kestirme']['s']) {
-					kestirme_baslik_ekle($deger, $yapi['a']['kestirme']['sayfa'], $this->seri);
-				}
+
+			foreach ($this->model['has_many'] as $has_many) {
+				if ($field!=$has_many['local_name']) {continue;}
+				$sql[]=$has_many['foreign_name'] . "='" . $this->id . "'";
+				if ($condition!==false) {$sql[]='(' . $condition . ')';}
+				return $this->adb->count($has_many['type'], implode(' AND ', $sql), $order);
 			}
-			if (count($sql)) {
-				$sql="UPDATE " . $this->tur . " SET " . implode(", ", $sql) . (($yapi['a']['tarihler']) ? ", degis_tarih='" . _GMT_STAMP_ . "'" : '') . " WHERE seri='" . $this->seri . "'";
-				mysql_sorgu($sql);
-				if ($yapi['a']['tarihler']) {$this->bilgi['degis_tarih']=_GMT_STAMP_;}
+
+			foreach ($this->model['many_to_many'] as $m2m) {
+				if ($field!=$m2m['local_name']) {continue;}
+				$sql[]="id IN (SELECT " . $m2m['local_name'] . " FROM " . $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "='" . $this->id . "')";
+				if ($condition!==false) {$sql[]='(' . $condition . ')';}
+				return $this->adb->count($m2m['type'], implode(' AND ', $sql), $order);
 			}
-			$this->kaydet();
+
+			foreach ($this->model['self_ref'] as $self_ref) {
+				if ($field!=$self_ref) {continue;}
+				$sql[0]="(SELECT " . $this->name . "1 AS id FROM " . $self_ref . " WHERE " . $this->name . "2='" . $this->id . "')";
+				$sql[0].="UNION (SELECT " . $this->name . "2 AS id FROM " . $self_ref . " WHERE " . $this->name . "1='" . $this->id . "')";
+				if ($condition!==false) {$sql[]='(' . $condition . ')';}
+				return $this->adb->count($this->name, implode(' AND ', $sql), $order);
+			}
 		}
 
 		function liste ($ne, $sart=false, $sirala=false, $sinirla=false, $say=false) {
-			global $_YAPI;
-			if (!(isset($this->bilgi[$ne]) && is_array($this->bilgi[$ne]))) {return false;}
-			$yapi=$_YAPI[$this->tur];
+
 			foreach ($yapi['sc'] as $sc) {
 				if ($ne!=$sc['yerel']) {continue;}
 				$sql[]=$sc['yabanci'] . "='" . $this->seri . "'";
