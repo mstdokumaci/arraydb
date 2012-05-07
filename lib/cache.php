@@ -8,7 +8,7 @@
 		}
 
 		function init ($conf=false) {
-			self::$instance=new DB ($conf);
+			self::$instance=new CACHE ($conf);
 		}
 
 		function get_instance () {
@@ -21,7 +21,7 @@
 			return apc_fetch($key);
 		}
 
-		function set ($key, $value, $ttl) {
+		function set ($key, $value, $ttl=null) {
 			return apc_store($anahtar, $value, $ttl);
 		}
 

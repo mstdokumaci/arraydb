@@ -1,17 +1,18 @@
 <?php
 
 	class ADB {
-		private $ITEM, $ROW, $COUNT, $LIST;
+		private static $instance;
+		public $ROW, $COUNT, $LIST;
 		private $db, $cache;
 		private $DM;
 
 		function __construct ($DM) {
-			$this->ITEM=$this->ROW=$this->LIST=array();
+			$this->ROW=$this->LIST=$this->$COUNT=array();
 			$this->db=DB::get_instance();
 			$this->cache=CACHE::get_instance();
 
-			$cached_dm=cache::get('__DATA_MODEL__');
-			$cached_hash=cache::get('__DATA_MODEL_HASH__');
+			$cached_dm=$this->cache->get('__DATA_MODEL__');
+			$cached_hash=$this->cache->get('__DATA_MODEL_HASH__');
 			if ($cached_dm!==false && $cached_hash!==false && $cached_hash==md5(serialize($DM))) {
 				$this->DM=$cached_dm;
 				return;
@@ -62,21 +63,27 @@
 				$this->DM[$name]=$item;
 			}
 
-			cache::set('__DATA_MODEL_HASH__', md5(serialize($DM)));
-			cache::set('__DATA_MODEL__', $this->DM);
+			$this->cache->set('__DATA_MODEL_HASH__', md5(serialize($DM)));
+			$this->cache->set('__DATA_MODEL__', $this->DM);
+		}
+
+		function init ($DM) {
+			self::$instance=new ADB ($DM);
+		}
+
+		function get_instance () {
+			if (!isset(self::$instance))
+				throw new Exception('You have to initialize this class before using');
+			return self::$instance;
 		}
 
 		function load ($name, $id) {
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
-			if (isset($this->ITEM[$name][$id]))
-				return $this->ITEM[$name][$id];
-			elseif ($data=cache::get('item_' . $name . '_' . $id))
-				return new ITEM($name, $this->DM[$name], $id, 'cached', $data);
-			elseif (isset($this->ROW[$name][$id]))
-				return new ITEM($name, $this->DM[$name], $id, 'db-row', $this->ROW[$name][$id]);
+			if (isset($this->ROW[$name][$id]))
+				return new ITEM($name, $this->DM[$name], $id, $this->ROW[$name][$id]);
 			else
-				return new ITEM($name, $this->DM[$name], $id, 'no-data');
+				return new ITEM($name, $this->DM[$name], $id);
 		}
 
 		function create ($name, $data) {
@@ -114,7 +121,7 @@
 
 			$item=$this->load($name, $id);
 
-			cache::delete('item_' . $name . '_' . $id);
+			$this->cache->delete('item_' . $name . '_' . $id);
 
 			$this->db->delete($name, "id='" . $id . "'");
 
@@ -141,7 +148,7 @@
 
 			unset($this->ITEM[$name][$id]);
 			unset($this->ROW[$name][$id]);
-			cache::delete('item_' . $name . '_' . $id);
+			$this->cache->delete('item_' . $name . '_' . $id);
 		}
 
 		function relate ($name1, $id1, $name2, $id2, $relation_name=false) {

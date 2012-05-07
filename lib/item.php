@@ -4,7 +4,7 @@
 		private $name, $model, $id, $data;
 		private $db, $cache;
 
-		function __construct ($name, $model, $id, $data_type='no-data', $data=false) {
+		function __construct ($name, $model, $id, $row=false) {
 			$this->db=DB::get_instance();
 			$this->cache=CACHE::get_instance();
 
@@ -12,23 +12,21 @@
 			$this->model=$model;
 			$this->id=$id;
 
-			switch ($data_type) {
-				case 'no-data':
-					$sql="SELECT * FROM " . $name . " WHERE id='" . $id . "'";
-					$result=$this->db->select($sql);
-					if (!count($result))
-						throw new Exception('No ' . $name . ' found with id ' . $id);
-
-					$this->data=$result[0];
-					break;
-				case 'db-row':
-					$this->data=$data;
-					break;
-				case 'cached':
-					$this->data=$data;
-					return;
+			if ($data=$this->cache->get('item_' . $this->name . '_' . $this->id)) {
+				$this->data=$data;
+				return;
 			}
 
+			if ($row!==false) {
+				$this->data=$row;
+			} else {
+				$sql="SELECT * FROM " . $this->name . " WHERE id='" . $this->id . "'";
+				$result=$this->db->select($sql);
+				if (!count($result))
+					throw new Exception('No ' . $this->name . ' found with id ' . $this->id);
+
+				$this->data=$result[0];
+			}
 
 			foreach ($yapi['st'] as $st) {$this->bilgi[$st]=bul($st, $tur, $seri);}
 			foreach ($yapi['sc'] as $sc) {$this->bilgi[$sc['yerel']]=liste($sc['tur'], $sc['yabanci'] . "='" . $seri . "'");}
@@ -47,7 +45,7 @@
 					$this->bilgi[$cy][]=intval($satir['seri']);
 				}
 			}
-			$this->kaydet();
+			$this->save();
 		}
 
 
@@ -159,10 +157,8 @@
 			}
 		}
 
-		private function kaydet () {
-			global $_NESNE, $_YAPI;
-			$_NESNE[$this->tur][$this->seri]=$this;
-			cache_sakla('nesne_' . $this->tur . '_' . $this->seri, $this, $_YAPI[$this->tur]['a']['mzaman']);
+		private function save () {
+			$this->cache->set('item_' . $this->name . '_' . $this->id, $this->model['conf']['ttl']);
 		}
 
 
