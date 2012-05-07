@@ -245,36 +245,9 @@
 		}
 
 		function count ($name, $condition=false, $order=false) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
-
 			if (isset($this->COUNT[$name][$condition])) return $this->COUNT[$name][$condition];
 
-			$item_model=$this->DM[$name];
-			$sql='SELECT * FROM ' . $name;
-			if ($condition!==false) $sql.=' WHERE ' . $condition;
-
-			if ($order!==false) {
-				foreach (explode(',', $order) as $p) {
-					$p=trim(array_shift(explode(' ', trim($p))));
-					if (isset($item_model['fields'][$p])) {continue;}
-					foreach ($item_model['has_many'] as $has_many) {
-						if ($p!=$has_many['local_name']) {continue;}
-						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $has_many['type'] . " WHERE " . $has_many['foreign_name'] . "=" . $name . ".id)"));
-						continue 2;
-					}
-					foreach ($item_model['many_to_many'] as $m2m) {
-						if ($p!=$m2m['local_name']) {continue;}
-						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
-						continue 2;
-					}
-					foreach ($item_model['self_ref'] as $self_ref) {
-						if ($p!=$self_ref) {continue;}
-						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
-						continue 2;
-					}
-				}
-				$sql.=" ORDER BY " . $order;
-			}
+			$sql=$this->prepare_select($name, $condition, $order);
 
 			$this->COUNT[$name][$condition]=$this->db->count($sql);
 
@@ -282,36 +255,9 @@
 		}
 
 		function id_list ($name, $condition=false, $order=false, $limit=false) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
-
 			if (isset($this->LIST[$name][$condition][$order][$limit])) return $this->LIST[$name][$condition][$order][$limit];
 
-			$item_model=$this->DM[$name];
-			$sql='SELECT * FROM ' . $name;
-			if ($condition!==false) $sql.=' WHERE ' . $condition;
-
-			if ($order!==false) {
-				foreach (explode(',', $order) as $p) {
-					$p=trim(array_shift(explode(' ', trim($p))));
-					if (isset($item_model['fields'][$p])) {continue;}
-					foreach ($item_model['has_many'] as $has_many) {
-						if ($p!=$has_many['local_name']) {continue;}
-						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $has_many['type'] . " WHERE " . $has_many['foreign_name'] . "=" . $name . ".id)"));
-						continue 2;
-					}
-					foreach ($item_model['many_to_many'] as $m2m) {
-						if ($p!=$m2m['local_name']) {continue;}
-						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
-						continue 2;
-					}
-					foreach ($item_model['self_ref'] as $self_ref) {
-						if ($p!=$self_ref) {continue;}
-						$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
-						continue 2;
-					}
-				}
-				$sql.=" ORDER BY " . $order;
-			}
+			$sql=$this->prepare_select($name, $condition, $order);
 
 			if ($limit!==false) {$sql.=" LIMIT " . $limit;}
 
@@ -325,6 +271,86 @@
 			$this->LIST[$name][$condition][$order][$limit]=$return;
 
 			return $return;
+		}
+
+		function count_join ($name, $table, $condition, $order) {
+			if (isset($this->COUNT[$name][$table][$condition])) return $this->COUNT[$name][$table][$condition];
+
+			$sql=$this->prepare_join_select($name, $table, $condition, $order);
+
+			$this->COUNT[$name][$table][$condition]=$this->db->count($sql);
+
+			return $this->COUNT[$name][$table][$condition];
+		}
+
+		function id_list_join ($name, $table, $condition=false, $order=false, $limit=false) {
+			if (isset($this->LIST[$name][$table][$condition][$order][$limit])) return $this->LIST[$name][$table][$condition][$order][$limit];
+
+			$sql=$this->prepare_join_select($name, $table, $condition, $order);
+
+			if ($limit!==false) {$sql.=" LIMIT " . $limit;}
+
+			$return=$this->LIST[$name][$table][$condition][$order][$limit]=array();
+
+			foreach ($this->db->select($sql) as $row) {
+				$this->ROW[$name][intval($row['id'])]=$row;
+				$return[]=intval($row['id']);
+			}
+
+			$this->LIST[$name][$table][$condition][$order][$limit]=$return;
+
+			return $return;
+		}
+
+		private function prepare_select ($name, $condition=false, $order=false) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			$item_model=$this->DM[$name];
+
+			$sql='SELECT * FROM ' . $name;
+			if ($condition!==false) $sql.=' WHERE ' . $condition;
+
+			if ($order!==false) $sql.=" ORDER BY " . $this->prepare_order($name, $order);
+
+			return $sql;
+		}
+
+		private function prepare_join_select ($name, $table, $condition=false, $order=false) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			$item_model=$this->DM[$name];
+
+			$sql='SELECT ' . $name . '.* FROM ' . $name . ', ' . $table;
+			if ($condition!==false) $sql.=' WHERE ' . $condition;
+
+			if ($order!==false) $sql.=" ORDER BY " . $this->prepare_order($name, $order);
+
+			return $sql;
+		}
+
+		private function prepare_order ($name, $order) {
+			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			$item_model=$this->DM[$name];
+
+			foreach (explode(',', $order) as $p) {
+				$p=trim(array_shift(explode(' ', trim($p))));
+				if (isset($item_model['fields'][$p])) {continue;}
+				foreach ($item_model['has_many'] as $has_many) {
+					if ($p!=$has_many['local_name']) {continue;}
+					$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $has_many['type'] . " WHERE " . $has_many['foreign_name'] . "=" . $name . ".id)"));
+					continue 2;
+				}
+				foreach ($item_model['many_to_many'] as $m2m) {
+					if ($p!=$m2m['local_name']) {continue;}
+					$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
+					continue 2;
+				}
+				foreach ($item_model['self_ref'] as $self_ref) {
+					if ($p!=$self_ref) {continue;}
+					$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
+					continue 2;
+				}
+			}
+
+			return $order;
 		}
 
 		private function get_initial_item () {
