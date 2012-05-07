@@ -29,23 +29,25 @@
 				$this->data=$result[0];
 			}
 
-			foreach ($this->model['has_many'] as $has_many) {$this->data[$has_many['local_name']]=$this->adb->id_list($has_many['type'], $has_many['foreign_name'] . "='" . $this->id . "'");}
+			foreach ($this->model['has_many'] as $has_many)
+				$this->data[$has_many['local_name']]=$this->adb->id_list($has_many['type'], $has_many['foreign_name'] . "='" . $this->id . "'");
 
-			foreach ($yapi['cc'] as $cc) {
-				$sql="SELECT " . $cc['yerel'] . " FROM " . $cc['yardimci'] . " WHERE " . $cc['yabanci'] . "='" . $seri . "'";
-				$this->bilgi[$cc['yerel']]=array();
-				if (!$tablo=mysql_sorgu($sql)) {continue;}
-				while ($satir=mysqli_fetch_assoc($tablo)) {$this->bilgi[$cc['yerel']][]=intval($satir[$cc['yerel']]);}
-			}
-			foreach ($yapi['cy'] as $cy) {
-				$sql="(SELECT " . $tur . "1 AS seri FROM " . $cy . " WHERE " . $tur . "2='" . $seri . "')";
-				$sql.="UNION (SELECT " . $tur . "2 AS seri FROM " . $cy . " WHERE " . $tur . "1='" . $seri . "')";
-				$this->bilgi[$cy]=array();
-				if (!$tablo=mysql_sorgu($sql)) {continue;}
-				while ($satir=mysqli_fetch_assoc($tablo)) {
-					$this->bilgi[$cy][]=intval($satir['seri']);
+			foreach ($this->model['many_to_many'] as $m2m) {
+				$sql="SELECT " . $m2m['local_name'] . " FROM " . $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "='" . $id . "'";
+				$this->data[$m2m['local_name']]=array();
+				foreach ($this->db->select($sql) as $row) {
+					$this->data[$m2m['local_name']][]=intval($row[$m2m['local_name']]);
 				}
 			}
+			foreach ($this->model['self_ref'] as $self_ref) {
+				$sql="(SELECT " . $this->name . "1 AS id FROM " . $self_ref . " WHERE " . $this->name . "2='" . $this->id . "')";
+				$sql.="UNION (SELECT " . $this->name . "2 AS id FROM " . $self_ref . " WHERE " . $this->name . "1='" . $this->id . "')";
+				$this->data[$self_ref]=array();
+				foreach ($this->db->select($sql) as $row) {
+					$this->data[$self_ref][]=intval($row['id']);
+				}
+			}
+
 			$this->save();
 		}
 
