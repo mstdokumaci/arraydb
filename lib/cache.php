@@ -1,6 +1,22 @@
 <?php
 
-	class cache {
+	class CACHE {
+		private static $instance;
+		private $type, $conn;
+
+		function __construct ($conf) {
+		}
+
+		function init ($conf=false) {
+			self::$instance=new DB ($conf);
+		}
+
+		function get_instance () {
+			if (!isset(self::$instance))
+				throw new Exception('You have to initialize this class before using');
+			return self::$instance;
+		}
+
 		function get ($key) {
 			return apc_fetch($key);
 		}
