@@ -54,56 +54,64 @@
 
 		/** OFFSET FONKSİYONLARI **/
 
-		function offsetexists ($ne) {return isset($this->bilgi[$ne]);}
+		function offsetexists ($field) {return isset($this->data[$field]);}
 
-		function offsetget ($ne) {
-			return (isset($this->bilgi[$ne])) ? $this->bilgi[$ne] : false;
+		function offsetget ($field) {
+			if (!isset($this->data[$field]))
+				throw new Exception('No field found as ' . $field);
+
+			return $this->data[$field];
 		}
 
-		function offsetset ($ne, $deger) {
-			global $baglan, $_YAPI;
-			$yapi=$_YAPI[$this->tur];
-			if (!(isset($yapi['s'][$ne]))) {
-				if (in_array($ne, array('_yetki_', 'ip', 'lisan'))) {
-					$this->bilgi[$ne]=$deger;
-					$this->kaydet();
-					return true;
-				} else {return false;}
+		function offsetset ($field, $value) {
+			if (!(isset($this->model['fields'][$field])))
+				throw new Exception('No field found as ' . $field);
+
+			$field_model=$this->model['fields'][$field];
+			if (isset($field_model['filter']) && function_exists($field_model['filter'])) {$value=eval('return ' . $field_model['filter'] . '($value);');}
+
+			$update[$field]=$value;
+			$update['update_date']=$_SERVER['REQUEST_TIME'];
+
+			$this->db->update($this->name, $update, "id='" . $this->id . "'");
+
+			if ($field_model['foreign']!==false) {
+				$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($this->data[$field]));
+				$foreign_item->delete_relation($field_model['foreign']['field'], $this->id);
+
+				$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($value));
+				$foreign_item->add_relation($field_model['foreign']['field'], $this->id);
 			}
-			$s=$yapi['s'][$ne];
-			if (isset($s['filtre']) && function_exists($s['filtre'])) {$deger=eval('return ' . $s['filtre'] . '($deger);');}
-			$sql="UPDATE " . $this->tur . " SET " . $ne . "='" . mysqli_real_escape_string($baglan, $deger) . "'" . (($yapi['a']['tarihler']) ? ", degis_tarih='" . _GMT_STAMP_ . "'" : '') . " WHERE seri='" . $this->seri . "'";
-			if (mysql_sorgu($sql)) {
-				if ($s['yabanci']!==false) {
-					if ($y_tablo=yukle($s['yabanci']['tur'], $this->bilgi[$ne])) {$y_tablo->sil($s['yabanci']['sutun'], $this->seri);}
-					if ($y_tablo=yukle($s['yabanci']['tur'], $deger)) {$y_tablo->ekle($s['yabanci']['sutun'], $this->seri);}
-				}
-				$this->bilgi[$ne]=$deger;
-				if ($yapi['a']['tarihler']) {$this->bilgi['degis_tarih']=_GMT_STAMP_;}
-				if (isset($yapi['a']['kestirme']) && $ne==$yapi['a']['kestirme']['s']) {
-					kestirme_baslik_ekle($deger, $yapi['a']['kestirme']['sayfa'], $this->seri);
-				}
-			}
-			$this->kaydet();
-			return true;
-		}
+			$this->data[$field]=$value;
+			$this->data['update_date']=$_SERVER['REQUEST_TIME'];
 
-		function offsetunset ($ne) {
-			return false;
-		}
-
-		function ekle ($ne, $seri) {
-			$seri=intval($seri);
-			if (!(isset($this->bilgi[$ne]) && is_array($this->bilgi[$ne])) || in_array($seri, $this->bilgi[$ne])) {return false;}
-			$this->bilgi[$ne][]=$seri;
 			$this->kaydet();
 		}
 
-		function sil ($ne, $seri) {
-			$seri=intval($seri);
-			if (!(isset($this->bilgi[$ne]) && is_array($this->bilgi[$ne]) && !in_array($seri, $this->bilgi[$ne]))) {return false;}
-			unset($this->bilgi[$ne][array_search($seri, $this->bilgi[$ne])]);
-			$this->kaydet();
+		function offsetunset ($field) {
+			throw new Exception('Field unset is not allowed.');
+		}
+
+		function add_relation ($field, $id) {
+			$id=intval($id);
+			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
+				throw new Exception($field . ' is not a many to many relation field');
+
+			if (in_array($id, $this->data[$field])) return false;
+
+			$this->data[$field][]=$id;
+			$this->save();
+		}
+
+		function delete_relation ($field, $id) {
+			$id=intval($id);
+			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
+				throw new Exception($field . ' is not a many to many relation field');
+
+			if (!in_array($id, $this->data[$field])) return false;
+
+			unset($this->data[$field][array_search($id, $this->data[$field])]);
+			$this->save();
 		}
 
 		function duzenle ($bilgi) {
@@ -163,113 +171,4 @@
 		private function save () {
 			$this->cache->set('item_' . $this->name . '_' . $this->id, $this->model['conf']['ttl']);
 		}
-
-
-		/** OTURUM FONKSİYONLARI **/
-
-		function sifre_dogru ($sifre, $ip='') {
-			global $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			if (function_exists($_YAPI[$this->tur]['s']['sifre']['filtre'])) {$sifre=eval('return ' . $_YAPI[$this->tur]['s']['sifre']['filtre'] . '($sifre);');}
-			if ($ip=='') {return ($sifre===$this->bilgi['sifre']);}
-			if (!($gtekrar=cache_ver('giris_tekrar'))) {$gtekrar=array();}
-			if (!(isset($gtekrar[$ip]))) {$gtekrar[$ip]=0;}
-			if ($gtekrar[$ip]>99) {$this->logla(2); return 400;}
-			if ($sifre!==$this->bilgi['sifre']) {
-				$this->logla(1);
-				$gtekrar[$ip]++;
-				cache_sakla('giris_tekrar', $gtekrar);
-				return 300;
-			}
-			return 200;
-		}
-
-		function oturum_ac ($ip, $lisan) {
-			global $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			if ($this->bilgi['_yetki_']) {return false;}
-			$this->bilgi['_yetki_']=(function_exists($this->tur . '_yetki')) ? eval('return ' . $this->tur . '_yetki($this);') : 1;
-			$this->bilgi['_basla_tarih_']=_GMT_STAMP_;
-			$this->offsetset('ip', $ip);
-			$this->offsetset('lisan', $lisan);
-			$this->hareket_etti();
-			$this->kaydet();
-			return true;
-		}
-
-		function hareket_etti () {
-			global $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			if (!($this->bilgi['_yetki_'])) {return false;}
-			if (!($oturum_hareket=cache_ver('oturum_hareket'))) {$oturum_hareket=array();}
-			$oturum_hareket[$this->tur][$this->seri]=_GMT_STAMP_;
-			cache_sakla('oturum_hareket', $oturum_hareket);
-			$this->kaydet();
-			return true;
-		}
-
-		function oturum_kapat () {
-			global $baglan, $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			if (!($this->bilgi['_yetki_'])) {return false;}
-
-			if (!($oturum_hareket=cache_ver('oturum_hareket'))) {$oturum_hareket=array();}
-			$sql="INSERT INTO " . $this->tur . "_oturum SET " . $this->tur . "='" . $this->seri . "', ip='" . $this->bilgi['ip'] . "', basla_tarih='" . $this->bilgi['_basla_tarih_'] . "', sure='" . (_GMT_STAMP_-$this->bilgi['_basla_tarih_']) . "'";
-			mysql_sorgu($sql);
-			unset($oturum_hareket[$this->tur][$this->seri]);
-			cache_sakla('oturum_hareket', $oturum_hareket);
-
-			unset($this->bilgi['lisan']);
-			$this->bilgi['_yetki_']=0;
-			$this->kaydet();
-			return true;
-		}
-
-		function oturum_ver ($basla, $bit) {
-			global $baglan, $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			$sql="SELECT * FROM " . $this->tur . "_oturum WHERE " . $this->tur . "='" . $this->seri . "' AND (basla_tarih BETWEEN '" . $basla . "' AND '" . $bit . "') ORDER BY basla_tarih";
-			if (!($tablo=mysql_sorgu($sql))) {return false;}
-			$oturum_ver=array();
-			while ($satir=mysqli_fetch_assoc($tablo)) {
-				$oturum_ver[]=array('ip'=>$satir['ip'], 'basla_tarih'=>$satir['basla_tarih'], 'sure'=>$satir['sure']);
-			}
-			return $oturum_ver;
-		}
-
-		function oturum_rapor () {
-			global $baglan, $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			$sql="SELECT SUM(sure) AS toplam_sure, COUNT(seri) AS toplam_adet, MAX(sure) AS en_uzun_sure FROM " . $this->tur . "_oturum WHERE " . $this->tur . "='" . $this->seri . "'";
-			if (!($satir=mysqli_fetch_assoc(mysql_sorgu($sql)))) {return false;}
-			$oturum_rapor=array('toplam_sure'=>$satir['toplam_sure'], 'toplam_adet'=>$satir['toplam_adet'], 'en_uzun_sure'=>$satir['en_uzun_sure']);
-			$sql="SELECT * FROM " . $this->tur . "_oturum WHERE " . $this->tur . "='" . $this->seri . "' AND sure='" . $satir['en_uzun_sure'] . "'";
-			if (!($satir=mysqli_fetch_assoc(mysql_sorgu($sql)))) {return false;}
-			$oturum_rapor['en_uzun_sure_basla']=$satir['tarih'];
-			return $oturum_rapor;
-		}
-
-
-		/** LOG FONKSİYONLARI **/
-
-		function logla ($olay) {
-			global $baglan, $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			$sql="INSERT INTO " . $this->tur . "_log SET " . $this->tur . "='" . $this->seri . "', ip='" . $this->bilgi['ip'] . "', tarih='" . _GMT_STAMP_ . "', olay='" . $olay . "'";
-			mysql_sorgu($sql);
-			return true;
-		}
-
-		function log_ver ($basla, $bit) {
-			global $baglan, $_YAPI;
-			if (!($_YAPI[$this->tur]['a']['oturum'])) {return false;}
-			$sql="SELECT * FROM " . $this->tur . "_log WHERE " . $this->tur . "='" . $this->seri . "' AND (tarih BETWEEN '" . $basla . "' AND '" . $bit . "') ORDER BY tarih";
-			if (!($tablo=mysql_sorgu($sql))) {return false;}
-			$log_ver=array();
-			while ($satir=mysqli_fetch_assoc($tablo)) {
-				$log_ver[]=array('ip'=>$satir['ip'], 'tarih'=>$satir['tarih'], 'olay'=>$satir['olay']);
-			}
-			return $log_ver;
-		}
-
 	}
