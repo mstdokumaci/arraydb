@@ -37,6 +37,11 @@
 				throw new Exception('MySQL delete query error: ' . mysqli_error($this->conn));
 		}
 
+		function table ($sql) {
+			if (!mysqli_query($this->conn, $sql))
+				throw new Exception('MySQL query error: ' . mysqli_error($this->conn));
+		}
+
 		function select ($sql) {
 			if (!$result=mysqli_query($this->conn, $sql))
 				throw new Exception('MySQL select query error: ' . mysqli_error($this->conn));
