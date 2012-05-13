@@ -68,11 +68,11 @@
 			$this->cache->set('__DATA_MODEL__', $this->DM);
 		}
 
-		function init ($DM) {
+		static function init ($DM) {
 			self::$instance=new ADB ($DM);
 		}
 
-		function get_instance () {
+		static function get_instance () {
 			if (!isset(self::$instance))
 				throw new Exception('You have to initialize this class before using');
 			return self::$instance;

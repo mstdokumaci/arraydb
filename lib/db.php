@@ -9,11 +9,11 @@
 				throw new Exception('MySQL connection unsuccessfull. Config: ' . json_encode($conf) . ', Error: ' . mysqli_connect_error());
 		}
 
-		function init ($conf) {
+		static function init ($conf) {
 			self::$instance=new DB ($conf);
 		}
 
-		function get_instance () {
+		static function get_instance () {
 			if (!isset(self::$instance))
 				throw new Exception('You have to initialize this class before using');
 			return self::$instance;

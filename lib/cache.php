@@ -7,11 +7,11 @@
 		function __construct ($conf) {
 		}
 
-		function init ($conf=false) {
+		static function init ($conf=false) {
 			self::$instance=new CACHE ($conf);
 		}
 
-		function get_instance () {
+		static function get_instance () {
 			if (!isset(self::$instance))
 				throw new Exception('You have to initialize this class before using');
 			return self::$instance;
