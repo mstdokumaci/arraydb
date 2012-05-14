@@ -18,14 +18,17 @@
 		}
 
 		function get ($key) {
+			return false;
 			return apc_fetch($key);
 		}
 
 		function set ($key, $value, $ttl=null) {
+			return false;
 			return apc_store($anahtar, $value, $ttl);
 		}
 
 		function delete ($key) {
+			return false;
 			return apc_delete($key);
 		}
 	}

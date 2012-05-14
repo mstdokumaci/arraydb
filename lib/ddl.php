@@ -10,22 +10,20 @@
 		}
 
 		function create_tables () {
+			foreach ($this->DM as $name=>$table)
+				$this->table[$name]=$this->prepare_table($name, $table);
+
 			foreach ($this->table as $name=>$table) {
 				$sql="DROP TABLE IF EXISTS " . $name;
 				$this->db->table($sql);
-				$sql="CREATE TABLE " . $name . " (" . implode(', ', array_merge($table['fields'], $tablo['keys'])) . ") ENGINE=InnoDB";
+				$sql="CREATE TABLE " . $name . " (" . implode(', ', array_merge($table['fields'], $table['keys'])) . ") ENGINE=InnoDB";
 				$this->db->table($sql);
 			}
 		}
 
-		function prepare_tables () {
-			foreach ($this->DM as $name=>$table)
-				$this->table[$name]=$this->prepare_table($name, $table);
-		}
-
 		private function prepare_table ($name, $table) {
 			$conf=$table['conf'];
-			$db_table['fields'][]='id ' . $this->get_field_type('numeric', $conf['len']) . ' NO NULL AUTO_INCREMENT';
+			$db_table['fields'][]='id ' . $this->get_field_type('numeric', $conf['len']) . ' NOT NULL AUTO_INCREMENT';
 			$db_table['keys'][]='PRIMARY KEY (id)';
 
 			$db_table['fields'][]="create_date INT(11) UNSIGNED NOT NULL DEFAULT '0'";
@@ -36,7 +34,7 @@
 			foreach ($table['fields'] as $field_name=>$field) {
 				list($db_field, $db_key)=$this->prepare_field($field_name, $field);
 				$db_table['fields'][]=$db_field;
-				$db_table['keys'][]=$db_key;
+				if (!empty($db_key)) $db_table['keys'][]=$db_key;
 			}
 
 			foreach ($table['many_to_many'] as $m2m) {
@@ -65,6 +63,7 @@
 				$type=$this->get_field_type($field['type'], $field['len']);
 
 			$db_field=$name . ' ' . $type . " NOT NULL DEFAULT '" . ($field['type']=='numeric' ? '0' : '')  . "'";
+			$db_key='';
 
 			if ($field['unique'])
 				$db_key='UNIQUE KEY (' . $name . ')';
@@ -91,16 +90,16 @@
 				'text'=>array(21000=>'VARCHAR', 9000001=>'MEDIUMTEXT')
 			);
 
-			$more_types=array_filter($types[$type], create_function('$maxlen, $name', 'return $maxlen>=' . $len . ';'));
-			ksort($more_types);
-			$name=array_shift($more_types);
+			$more_types=array_filter(array_keys($types[$type]), function ($maxlen) use ($len) {return $maxlen>=$len;});
+			sort($more_types);
+			$name=$types[$type][$more_types[0]];
 
 			if (empty($name))
 				throw new Exception('Field length is too much');
 
 			if ($signed) $len++;
 
-			if ($len<35001) $name . '(' . $len . ')';
+			if ($len<35001) $name .= '(' . $len . ')';
 
 			if ($type=='numeric' && !$signed) $name.=' UNSIGNED';
 

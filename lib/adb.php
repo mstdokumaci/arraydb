@@ -1,13 +1,18 @@
 <?php
 
+	require_once('cache.php');
+	require_once('db.php');
+	require_once('ddl.php');
+	require_once('item.php');
+
 	class ADB {
 		private static $instance;
 		public $ROW, $COUNT, $LIST;
-		private $db, $cache;
+		public $db, $cache;
 		private $DM;
 
 		function __construct ($DM) {
-			$this->ROW=$this->LIST=$this->$COUNT=array();
+			$this->ROW=$this->LIST=$this->COUNT=array();
 			$this->db=DB::get_instance();
 			$this->cache=CACHE::get_instance();
 
@@ -23,10 +28,9 @@
 			foreach ($DM as $name=>$item) {
 				$item=$item+$this->get_initial_item();
 				$item['conf']+=$this->get_initial_config();
-				$item['fields']+=$this->get_initial_fields();
 
 				foreach ($item['fields'] as $f_name=>$field) {
-					$field+=$this->get_initial_field_data($field['type']);
+					$field+=$this->get_initial_field_data($field);
 					$item['fields'][$f_name]=$field;
 				}
 
@@ -38,7 +42,7 @@
 						'len'=>$item['conf']['len'],
 						'foreign'=>array('type'=>$name, 'field'=>$has_many['local_name']),
 						'index'=>true
-					) + get_initial_field_data('numeric');
+					) + $this->get_initial_field_data(array('type'=>'numeric'));
 					$item['has_many'][$local_name]=$has_many;
 				}
 
@@ -76,6 +80,11 @@
 			if (!isset(self::$instance))
 				throw new Exception('You have to initialize this class before using');
 			return self::$instance;
+		}
+
+		function create_tables () {
+			$ddl=new DDL($this->DM);
+			$ddl->create_tables();
 		}
 
 		function load ($name, $id) {
@@ -372,21 +381,7 @@
 			return $list;
 		}
 
-		private function get_initial_fields () {
-			static $list=array(
-				'create_date'=>array(
-					'type'=>'numeric',
-					'len'=>11
-				),
-				'update_date'=>array(
-					'type'=>'numeric',
-					'len'=>11
-				)
-			);
-			return $list;
-		}
-
-		private function get_initial_field_data ($type) {
+		private function get_initial_field_data ($field) {
 			static $list=array(
 				'type'=>'text',
 				'unique'=>false,
@@ -408,6 +403,7 @@
 					'filter'=>'sha1'
 				),
 			);
-			return $list + $list_for_type[$type];
+			$field=$field+$list;
+			return $field + $list_for_type[$field['type']];
 		}
 	}
