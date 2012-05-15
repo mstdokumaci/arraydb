@@ -72,4 +72,7 @@
 
 	$adb->relate('user', $user_3, 'comment', $comment_2, 'liked_comment');
 
-	echo 'a';
+	foreach ($adb->id_list('user') as $id) {
+		$user=$adb->load($id);
+		echo '<h1>' . $user['name'] . '</h1>' . "\n";
+	}
