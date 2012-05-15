@@ -72,7 +72,9 @@
 		'text'=>'The one on the corner.'
 	));
 
+/*
 	$adb->relate('user', $user_3, 'comment', $comment_2, 'liked_comment');
+*/
 
 	foreach ($adb->id_list('user') as $id) {
 		$user=$adb->load('user', $id);
