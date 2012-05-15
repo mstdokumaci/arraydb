@@ -75,4 +75,11 @@
 	foreach ($adb->id_list('user') as $id) {
 		$user=$adb->load('user', $id);
 		echo '<h1>' . $user['name'] . '</h1>' . "\n";
+		echo '<h3>Friends: </h1>' . "\n";
+		echo '<ul>' . "\n";
+		foreach ($user['friend'] as $fid) {
+			$friend=$adb->load('user', $fid);
+			echo '<li>' . $friend['name'] . '</li>' . "\n";
+		}
+		echo '</ul>' . "\n";
 	}
