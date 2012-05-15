@@ -15,8 +15,8 @@
 				array('type'=>'comment', 'foreign_name'=>'writer')
 			),
 			'many_to_many'=>array(
-				'liked_post'=>array('type'=>'post'),
-				'liked_comment'=>array('type'=>'comment')
+				'liked_post'=>array('type'=>'post', 'foreign_name'=>'liker'),
+				'liked_comment'=>array('type'=>'comment', 'foreign_name'=>'liker')
 			),
 			'self_ref'=>array('friend')
 		),

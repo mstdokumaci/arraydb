@@ -14,7 +14,10 @@
 			$this->model=$model;
 			$this->id=$id;
 
-			if ($data=$this->cache->get('item_' . $this->name . '_' . $this->id)) {
+			if (isset(self::$ITEM[$name][$id])) {
+				$this->data=self::$ITEM[$name][$id];
+				return;
+			} elseif ($data=$this->cache->get('item_' . $this->name . '_' . $this->id)) {
 				$this->data=$data;
 				return;
 			}
@@ -86,7 +89,8 @@
 			$this->data[$field]=$value;
 			$this->data['update_date']=$_SERVER['REQUEST_TIME'];
 
-			$this->kaydet();
+			unset($this->adb->ROW[$this->name][$this->id], $this->adb->LIST[$this->name], $this->adb->COUNT[$this->name]);
+			$this->save();
 		}
 
 		function offsetunset ($field) {
@@ -146,6 +150,7 @@
 			$this->data['update_date']=$_SERVER['REQUEST_TIME'];
 			$this->data=$update + $this->data;
 
+			unset($this->adb->ROW[$this->name][$this->id], $this->adb->LIST[$this->name], $this->adb->COUNT[$this->name]);
 			$this->save();
 		}
 
@@ -218,6 +223,7 @@
 		}
 
 		private function save () {
-			$this->cache->set('item_' . $this->name . '_' . $this->id, $this->model['conf']['ttl']);
+			$this->cache->set('item_' . $this->name . '_' . $this->id, $this->data,$this->model['conf']['ttl']);
+			self::$ITEM[$this->name][$this->id]=$this->data;
 		}
 	}

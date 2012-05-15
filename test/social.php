@@ -52,13 +52,11 @@
 		'text'=>'I love being social.'
 	));
 
-/*
-	$adb->relate('user', $user_1, 'post', $post_2, 'liked_post');
-	$adb->relate('user', $user_1, 'post', $post_3, 'liked_post');
-	$adb->relate('user', $user_3, 'post', $post_3, 'liked_post');
-	$adb->relate('user', $user_3, 'post', $post_1, 'liked_post');
-	$adb->relate('user', $user_2, 'post', $post_2, 'liked_post');
-*/
+	$adb->relate('user', 'liked_post', $user_1, $post_2);
+	$adb->relate('user', 'liked_post', $user_1, $post_3);
+	$adb->relate('user', 'liked_post', $user_3, $post_3);
+	$adb->relate('user', 'liked_post', $user_3, $post_1);
+	$adb->relate('user', 'liked_post', $user_2, $post_2);
 
 	$comment_1=$adb->create('comment', array(
 		'post'=>$post_1,
@@ -72,9 +70,7 @@
 		'text'=>'The one on the corner.'
 	));
 
-/*
-	$adb->relate('user', $user_3, 'comment', $comment_2, 'liked_comment');
-*/
+	$adb->relate('user', 'liked_comment', $user_3, $comment_2);
 
 	foreach ($adb->id_list('user') as $id) {
 		$user=$adb->load('user', $id);
@@ -90,7 +86,24 @@
 		echo '<ul>' . "\n";
 		foreach ($user['post'] as $pid) {
 			$post=$adb->load('post', $pid);
-			echo '<li>' . $post['text'] . '</li>' . "\n";
+			$likers=array();
+			foreach ($post['liker'] as $liker) {
+				$liker=$adb->load('user', $liker);
+				$likers[]=$liker['name'];
+			}
+			$likers=(count($likers)) ? '<br />' . implode(', ', $likers) . ' liked.' : '';
+			echo '<li>' . $post['text'] . ' ' . $likers . '</li>' . "\n";
+			if (count($post['comment'])) echo '<h3>Comments: </h1>' . "\n";
+			foreach ($post['comment'] as $cid) {
+				$comment=$adb->load('comment', $cid);
+				$likers=array();
+				foreach ($comment['liker'] as $liker) {
+					$liker=$adb->load('user', $liker);
+					$likers[]=$liker['name'];
+				}
+				$likers=(count($likers)) ? '<br />' . implode(', ', $likers) . ' liked.' : '';
+				echo '<li>' . $comment['text'] . ' ' . $likers . '</li>' . "\n";
+			}
 		}
 		echo '</ul>' . "\n";
 	}
