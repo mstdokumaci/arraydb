@@ -11,8 +11,8 @@
 				'name'=>array('len'=>50),
 			),
 			'has_many'=>array(
-				array('type'=>'post'),
-				array('type'=>'comment')
+				array('type'=>'post', 'foreign_name'=>'writer'),
+				array('type'=>'comment', 'foreign_name'=>'writer')
 			),
 			'many_to_many'=>array(
 				array('type'=>'post', 'relation_name'=>'liked_post'),
