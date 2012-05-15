@@ -55,4 +55,7 @@
 	$adb->relate('user', $user_3, 'post', $post_1, 'liked_post');
 	$adb->relate('user', $user_2, 'post', $post_2, 'liked_post');
 
+	$adb->self_relate('user', 'friend', $user_1, $user_3);
+	$adb->self_relate('user', 'friend', $user_2, $user_3);
+
 	echo 'a';
