@@ -26,7 +26,7 @@
 			$this->DM=$DM;
 
 			foreach ($DM as $name=>$item) {
-				$item=$item+$this->get_initial_item();
+				$item=$this->DM[$name]+$this->get_initial_item();
 				$item['conf']+=$this->get_initial_config();
 
 				foreach ($item['fields'] as $f_name=>$field) {
