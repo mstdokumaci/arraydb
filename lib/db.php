@@ -45,7 +45,10 @@
 		function select ($sql) {
 			if (!$result=mysqli_query($this->conn, $sql))
 				throw new Exception('MySQL select query error: ' . mysqli_error($this->conn));
-			return mysqli_fetch_all($result, MYSQLI_ASSOC);
+
+			$all=array();
+			while ($row=mysqli_fetch_assoc($result)) $all[]=$row;
+			return $all;
 		}
 
 		function count ($sql) {
