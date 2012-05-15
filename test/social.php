@@ -34,6 +34,9 @@
 		'name'=>'Peter'
 	));
 
+	$adb->self_relate('user', 'friend', $user_1, $user_3);
+	$adb->self_relate('user', 'friend', $user_2, $user_3);
+
 	$post_1=$adb->create('post', array(
 		'writer'=>$user_2,
 		'text'=>'At Starbucks for a Frappucino'
@@ -55,7 +58,18 @@
 	$adb->relate('user', $user_3, 'post', $post_1, 'liked_post');
 	$adb->relate('user', $user_2, 'post', $post_2, 'liked_post');
 
-	$adb->self_relate('user', 'friend', $user_1, $user_3);
-	$adb->self_relate('user', 'friend', $user_2, $user_3);
+	$comment_1=$adb->create('comment', array(
+		'post'=>$post_1,
+		'writer'=>$user_3,
+		'text'=>'Which one?'
+	));
+
+	$comment_2=$adb->create('comment', array(
+		'post'=>$post_1,
+		'writer'=>$user_2,
+		'text'=>'The one on the corner.'
+	));
+
+	$adb->relate('user', $user_3, 'comment', $comment_2, 'liked_comment');
 
 	echo 'a';
