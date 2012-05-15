@@ -52,11 +52,13 @@
 		'text'=>'I love being social.'
 	));
 
+/*
 	$adb->relate('user', $user_1, 'post', $post_2, 'liked_post');
 	$adb->relate('user', $user_1, 'post', $post_3, 'liked_post');
 	$adb->relate('user', $user_3, 'post', $post_3, 'liked_post');
 	$adb->relate('user', $user_3, 'post', $post_1, 'liked_post');
 	$adb->relate('user', $user_2, 'post', $post_2, 'liked_post');
+*/
 
 	$comment_1=$adb->create('comment', array(
 		'post'=>$post_1,
