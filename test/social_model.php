@@ -14,6 +14,10 @@
 				array('type'=>'post'),
 				array('type'=>'comment')
 			),
+			'many_to_many'=>array(
+				array('type'=>'post', 'relation_name'=>'liked_post'),
+				array('type'=>'comment', 'relation_name'=>'liked_comment')
+			),
 			'self_ref'=>array('friend')
 		),
 		'post'=>array(
