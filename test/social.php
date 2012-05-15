@@ -88,7 +88,8 @@
 		echo '</ul>' . "\n";
 		echo '<h2>Posts: </h1>' . "\n";
 		echo '<ul>' . "\n";
-		foreach ($user['post'] as $pid) {
+		$posts=$user['post'];
+		foreach ($posts as $pid) {
 			$post=$adb->load('post', $pid);
 			echo '<li>' . $post['text'] . '</li>' . "\n";
 		}
