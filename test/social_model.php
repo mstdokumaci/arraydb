@@ -25,7 +25,6 @@
 				'len'=>8
 			),
 			'fields'=>array(
-				'title'=>array('len'=>150),
 				'text'=>array('len'=>5000),
 			),
 			'has_many'=>array(

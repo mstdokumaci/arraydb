@@ -34,4 +34,25 @@
 		'name'=>'Peter'
 	));
 
+	$post_1=$adb->create('post', array(
+		'writer'=>$user_2,
+		'text'=>'At Starbucks for a Frappucino'
+	));
+
+	$post_2=$adb->create('post', array(
+		'writer'=>$user_3,
+		'text'=>'What a wonderful world!'
+	));
+
+	$post_3=$adb->create('post', array(
+		'writer'=>$user_2,
+		'text'=>'I love being social.'
+	));
+
+	$this->adb->relate('user', $user_1, 'post', $post_2, 'liked_post');
+	$this->adb->relate('user', $user_1, 'post', $post_3, 'liked_post');
+	$this->adb->relate('user', $user_3, 'post', $post_3, 'liked_post');
+	$this->adb->relate('user', $user_3, 'post', $post_1, 'liked_post');
+	$this->adb->relate('user', $user_2, 'post', $post_2, 'liked_post');
+
 	echo 'a';
