@@ -49,10 +49,10 @@
 		'text'=>'I love being social.'
 	));
 
-	$this->adb->relate('user', $user_1, 'post', $post_2, 'liked_post');
-	$this->adb->relate('user', $user_1, 'post', $post_3, 'liked_post');
-	$this->adb->relate('user', $user_3, 'post', $post_3, 'liked_post');
-	$this->adb->relate('user', $user_3, 'post', $post_1, 'liked_post');
-	$this->adb->relate('user', $user_2, 'post', $post_2, 'liked_post');
+	$adb->relate('user', $user_1, 'post', $post_2, 'liked_post');
+	$adb->relate('user', $user_1, 'post', $post_3, 'liked_post');
+	$adb->relate('user', $user_3, 'post', $post_3, 'liked_post');
+	$adb->relate('user', $user_3, 'post', $post_1, 'liked_post');
+	$adb->relate('user', $user_2, 'post', $post_2, 'liked_post');
 
 	echo 'a';
