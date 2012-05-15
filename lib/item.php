@@ -31,6 +31,7 @@
 
 			foreach ($this->model['has_many'] as $has_many)
 				$this->data[$has_many['local_name']]=$this->adb->id_list($has_many['type'], $has_many['foreign_name'] . "='" . $this->id . "'");
+				print_r($this->data[$has_many['local_name']]);
 
 			foreach ($this->model['many_to_many'] as $m2m) {
 				$sql="SELECT " . $m2m['local_name'] . " FROM " . $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "='" . $id . "'";
