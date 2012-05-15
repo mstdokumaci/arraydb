@@ -264,7 +264,7 @@
 		}
 
 		function id_list ($name, $condition=false, $order=false, $limit=false) {
-			if (isset($this->LIST[$name][$condition][$order][$limit])) return $this->LIST[$name][$condition][$order][$limit];
+			//if (isset($this->LIST[$name][$condition][$order][$limit])) return $this->LIST[$name][$condition][$order][$limit];
 
 			$sql=$this->prepare_select($name, $condition, $order);
 
