@@ -7,8 +7,12 @@
 		'hostname'=>'localhost', 'database'=>'social', 'username'=>'root', 'password'=>''
 	);
 
+	$cache_config=array(
+		'type'=>'file', 'path'=>dirname(dirname(__FILE__)) . DIRECTORY_SEPARATOR . 'cache'
+	);
+
 	DB::init($db_config);
-	CACHE::init();
+	CACHE::init($cache_config);
 
 	ADB::init($model);
 
