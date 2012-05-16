@@ -99,15 +99,17 @@
 			echo '<ul>' . "\n";
 			foreach ($post['comment'] as $cid) {
 				$comment=$adb->load('comment', $cid);
+				$commenter=$adb->load('user', $comment['writer']);
 				$likers=array();
 				foreach ($comment['liker'] as $liker) {
 					$liker=$adb->load('user', $liker);
 					$likers[]=$liker['name'];
 				}
 				$likers=(count($likers)) ? '<br />' . implode(', ', $likers) . ' liked.' : '';
-				echo '<li>' . $comment['text'] . ' ' . $likers . '</li>' . "\n";
+				echo '<li>' . $commenter['name'] . ' commented: ' . $comment['text'] . ' ' . $likers . '</li>' . "\n";
 			}
 			echo '</ul>' . "\n";
+			echo '</div>' . "\n";
 		}
 		echo '</ul>' . "\n";
 	}
