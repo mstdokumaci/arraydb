@@ -34,8 +34,8 @@
 		'name'=>'Peter'
 	));
 
-	$adb->self_relate('user', 'friend', $user_1, $user_3);
-	$adb->self_relate('user', 'friend', $user_2, $user_3);
+	$adb->relate('user', 'friend', $user_1, $user_3);
+	$adb->relate('user', 'friend', $user_2, $user_3);
 
 	$post_1=$adb->create('post', array(
 		'writer'=>$user_2,
@@ -75,6 +75,7 @@
 	foreach ($adb->id_list('user') as $id) {
 		$user=$adb->load('user', $id);
 		echo '<h1>' . $user['name'] . '</h1>' . "\n";
+
 		echo '<h2>Friends: </h1>' . "\n";
 		echo '<ul>' . "\n";
 		foreach ($user['friend'] as $fid) {
@@ -82,6 +83,7 @@
 			echo '<li>' . $friend['name'] . '</li>' . "\n";
 		}
 		echo '</ul>' . "\n";
+
 		echo '<h2>Posts: </h1>' . "\n";
 		echo '<ul>' . "\n";
 		foreach ($user['post'] as $pid) {
@@ -94,6 +96,7 @@
 			$likers=(count($likers)) ? '<br />' . implode(', ', $likers) . ' liked.' : '';
 			echo '<li>' . $post['text'] . ' ' . $likers . '</li>' . "\n";
 			if (empty($post['comment'])) continue;
+
 			echo '<div style="margin-left:20px;">' . "\n";
 			echo '<h3>Comments: </h1>' . "\n";
 			echo '<ul>' . "\n";

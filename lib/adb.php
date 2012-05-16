@@ -169,8 +169,7 @@
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
 			$m2m=array_shift(array_filter($this->DM[$name]['many_to_many'], function ($m2m) use ($local_name) {return $m2m['local_name']==$local_name;}));
-			if (empty($m2m))
-				throw new Exception('No defined relation to relate ' . $name . '(' . $id1 . ').' . $local_name . ' to ' . $id2);
+			if (empty($m2m)) return $this->self_relate($name, $local_name, $id1, $id2);
 
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($m2m['type'], $id2);
@@ -188,8 +187,7 @@
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
 			$m2m=array_shift(array_filter($this->DM[$name]['many_to_many'], function ($m2m) use ($local_name) {return $m2m['local_name']==$local_name;}));
-			if (empty($m2m))
-				throw new Exception('No defined relation to unrelate ' . $name . '(' . $id1 . ').' . $local_name . ' to ' . $id2);
+			if (empty($m2m)) return $this->self_unrelate($name, $local_name, $id1, $id2);
 
 			$m2m=array_shift($m2m);
 
@@ -203,11 +201,11 @@
 			$item2->delete_relation($m2m['foreign_name'], $id1);
 		}
 
-		function self_relate ($name, $local_name, $id1, $id2) {
+		private function self_relate ($name, $local_name, $id1, $id2) {
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
-				throw new Exception('No defined relation to self relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
+				throw new Exception('No defined relation to relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
 
 			$insert=array($name . '1'=>$id1, $name . '2'=>$id2);
 			$this->db->insert($local_name, $insert);
@@ -219,11 +217,11 @@
 			$item2->add_relation($local_name, $id1);
 		}
 
-		function self_unrelate ($name, $local_name, $id1, $id2) {
+		private function self_unrelate ($name, $local_name, $id1, $id2) {
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
-				throw new Exception('No defined relation to self relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
+				throw new Exception('No defined relation to unrelate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
 
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($name, $id2);
