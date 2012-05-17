@@ -174,7 +174,8 @@
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($m2m['type'], $id2);
 
-			if (in_array($id2, $item1[$local_name])) {return;}
+			$list=$item1[$local_name];
+			if (in_array($id2, $list)) {return;}
 
 			$insert=array($m2m['foreign_name']=>$id1, $local_name=>$id2);
 			$this->db->insert($m2m['relation_name'], $insert);
@@ -207,11 +208,14 @@
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
 				throw new Exception('No defined relation to relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
 
-			$insert=array($name . '1'=>$id1, $name . '2'=>$id2);
-			$this->db->insert($local_name, $insert);
-
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($name, $id2);
+
+			$list=$item1[$local_name];
+			if (in_array($id2, $list)) {return;}
+
+			$insert=array($name . '1'=>$id1, $name . '2'=>$id2);
+			$this->db->insert($local_name, $insert);
 
 			$item1->add_relation($local_name, $id2);
 			$item2->add_relation($local_name, $id1);
@@ -223,11 +227,11 @@
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
 				throw new Exception('No defined relation to unrelate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
 
-			$item1=$this->load($name, $id1);
-			$item2=$this->load($name, $id2);
-
 			$condition="(" . $name . "1='" . $id1 . "' AND " . $name . "2='" . $id2 . "') OR (" . $name . "1='" . $id2 . "' AND " . $name . "2='" . $id1 . "')";
 			$this->db->delete($local_name, $condition);
+
+			$item1=$this->load($name, $id1);
+			$item2=$this->load($name, $id2);
 
 			$item1->delete_relation($local_name, $id2);
 			$item2->delete_relation($local_name, $id1);

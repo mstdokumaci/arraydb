@@ -1,5 +1,7 @@
 <?php
 
+	set_time_limit(60);
+
 	require_once('../lib/adb.php');
 	require_once('social_model.php');
 
@@ -33,10 +35,31 @@
 		'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark', 'Lewis', 'Lee', 'Walker'
 	);
 
+	$post_texts=array(
+		'At Starbucks for a frappuccino.',
+		'What a wonderful world.',
+		'I love my cat!',
+		'Have a nice day everyone.',
+		'Will be in Istanbul on 17th.',
+		'To be or not to be: that\'s the question.',
+		'But oh the road is long, the stones that you are walking on have gone.',
+		'And the night that you got locked in was the time to decide stop chasing shadows just enjoy the ride.'
+	);
+
+	$comment_texts=array(
+		'WTF?',
+		'You sure?',
+		'Love this!',
+		'Which one',
+		'Totally agreed'
+	);
+
 	$name_count=count($names)-1;
 	$surname_count=count($surnames)-1;
+	$post_text_count=count($post_texts)-1;
+	$comment_text_count=count($comment_texts)-1;
 
-	for ($i=1;$i<100;$i++) {
+	for ($i=1;$i<101;$i++) {
 		$name=$names[mt_rand(0, $name_count)];
 		$surname=$surnames[mt_rand(0, $surname_count)];
 
@@ -47,46 +70,32 @@
 		));
 	}
 
-/*
-	$adb->relate('user', 'friend', $user_1, $user_3);
-	$adb->relate('user', 'friend', $user_2, $user_3);
+	for ($i=1;$i<201;$i++) {
+		$adb->relate('user', 'friend', $user[mt_rand(1,100)], $user[mt_rand(1, 100)]);
+	}
 
-	$post_1=$adb->create('post', array(
-		'writer'=>$user_2,
-		'text'=>'At Starbucks for a Frappucino'
-	));
+	for ($i=1;$i<201;$i++) {
+		$post[$i]=$adb->create('post', array(
+			'writer'=>$user[mt_rand(1,100)],
+			'text'=>$post_texts[mt_rand(0, $post_text_count)]
+		));
+	}
 
-	$post_2=$adb->create('post', array(
-		'writer'=>$user_3,
-		'text'=>'What a wonderful world!'
-	));
+	for ($i=1;$i<401;$i++) {
+		$adb->relate('user', 'liked_post', $user[mt_rand(1,100)], $post[mt_rand(1, 200)]);
+	}
 
-	$post_3=$adb->create('post', array(
-		'writer'=>$user_2,
-		'text'=>'I love being social.'
-	));
+	for ($i=1;$i<301;$i++) {
+		$comment[$i]=$adb->create('comment', array(
+			'post'=>$post[mt_rand(1,200)],
+			'writer'=>$user[mt_rand(1,100)],
+			'text'=>$comment_texts[mt_rand(0, $comment_text_count)]
+		));
+	}
 
-	$adb->relate('user', 'liked_post', $user_1, $post_2);
-	$adb->relate('user', 'liked_post', $user_1, $post_3);
-	$adb->relate('user', 'liked_post', $user_3, $post_3);
-	$adb->relate('user', 'liked_post', $user_3, $post_1);
-	$adb->relate('user', 'liked_post', $user_2, $post_2);
-
-	$comment_1=$adb->create('comment', array(
-		'post'=>$post_1,
-		'writer'=>$user_3,
-		'text'=>'Which one?'
-	));
-
-	$comment_2=$adb->create('comment', array(
-		'post'=>$post_1,
-		'writer'=>$user_2,
-		'text'=>'The one on the corner.'
-	));
-
-	$adb->relate('user', 'liked_comment', $user_3, $comment_2);
-
-*/
+	for ($i=1;$i<601;$i++) {
+		$adb->relate('user', 'liked_comment', $user[mt_rand(1,100)], $comment[mt_rand(1, 300)]);
+	}
 
 	foreach ($adb->id_list('user') as $id) {
 		$user=$adb->load('user', $id);
