@@ -20,24 +20,34 @@
 
 	$adb->create_tables();
 
-	$user_1=$adb->create('user', array(
-		'email'=>'john@gmail.com',
-		'password'=>'123john',
-		'name'=>'John'
-	));
+	$names=array(
+		'Jacob', 'Sophia', 'Mason', 'Isabella', 'William', 'Emma', 'Jayden', 'Olivia',
+		'Noah', 'Ava', 'Michael', 'Emily', 'Ethan', 'Abigail', 'Alexander', 'Madison',
+		'Aiden', 'Mia', 'Daniel', 'Chloe', 'Anthony', 'Elizabeth', 'Matthew', 'Ella',
+		'Elijah', 'Addison', 'Joshua', 'Natalie', 'Liam', 'Lily'
+	);
 
-	$user_2=$adb->create('user', array(
-		'email'=>'jane@gmail.com',
-		'password'=>'123jane',
-		'name'=>'Jane'
-	));
+	$surnames=array(
+		'Smith', 'Johnson', 'Wiliiams', 'Jones', 'Brown', 'Davis', 'Miller', 'Wilson',
+		'Moore', 'Taylor', 'Anderson', 'Thomas', 'Jackson', 'White', 'Harris', 'Martin',
+		'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark', 'Lewis', 'Lee', 'Walker'
+	);
 
-	$user_3=$adb->create('user', array(
-		'email'=>'peter@gmail.com',
-		'password'=>'123peter',
-		'name'=>'Peter'
-	));
+	$name_count=count($names)-1;
+	$surname_count=count($surnames)-1;
 
+	for ($i=1;$i<100;$i++) {
+		$name=$names[mt_rand(0, $name_count)];
+		$surname=$surnames[mt_rand(0, $surname_count)];
+
+		$user[$i]=$adb->create('user', array(
+			'email'=>strtolower($name) . '.' . strtolower($surname) . '@gmail.com',
+			'password'=>strtolower($surname) . '936',
+			'name' => $name . ' ' . $surname
+		));
+	}
+
+/*
 	$adb->relate('user', 'friend', $user_1, $user_3);
 	$adb->relate('user', 'friend', $user_2, $user_3);
 
@@ -75,6 +85,8 @@
 	));
 
 	$adb->relate('user', 'liked_comment', $user_3, $comment_2);
+
+*/
 
 	foreach ($adb->id_list('user') as $id) {
 		$user=$adb->load('user', $id);
