@@ -41,7 +41,7 @@
 	$post_text_count=count($post_texts)-1;
 	$comment_text_count=count($comment_texts)-1;
 
-	for ($i=1;$i<101;$i++) {
+	for ($i=1;$i<201;$i++) {
 		$name=$names[mt_rand(0, $name_count)];
 		$surname=$surnames[mt_rand(0, $surname_count)];
 
@@ -52,29 +52,65 @@
 		));
 	}
 
-	for ($i=1;$i<201;$i++) {
-		$adb->relate('user', 'friend', $user[mt_rand(1,100)], $user[mt_rand(1, 100)]);
+	for ($i=1;$i<401;$i++) {
+		$adb->relate('user', 'friend', $user[mt_rand(1,200)], $user[mt_rand(1, 200)]);
 	}
 
-	for ($i=1;$i<201;$i++) {
+	for ($i=1;$i<401;$i++) {
 		$post[$i]=$adb->create('post', array(
-			'writer'=>$user[mt_rand(1,100)],
+			'writer'=>$user[mt_rand(1,200)],
 			'text'=>$post_texts[mt_rand(0, $post_text_count)]
 		));
 	}
 
-	for ($i=1;$i<401;$i++) {
-		$adb->relate('user', 'liked_post', $user[mt_rand(1,100)], $post[mt_rand(1, 200)]);
+	for ($i=1;$i<801;$i++) {
+		$adb->relate('user', 'liked_post', $user[mt_rand(1,200)], $post[mt_rand(1, 400)]);
 	}
 
-	for ($i=1;$i<301;$i++) {
+	for ($i=1;$i<601;$i++) {
 		$comment[$i]=$adb->create('comment', array(
-			'post'=>$post[mt_rand(1,200)],
-			'writer'=>$user[mt_rand(1,100)],
+			'post'=>$post[mt_rand(1,400)],
+			'writer'=>$user[mt_rand(1,200)],
 			'text'=>$comment_texts[mt_rand(0, $comment_text_count)]
 		));
 	}
 
-	for ($i=1;$i<601;$i++) {
-		$adb->relate('user', 'liked_comment', $user[mt_rand(1,100)], $comment[mt_rand(1, 300)]);
+	for ($i=1;$i<1201;$i++) {
+		$adb->relate('user', 'liked_comment', $user[mt_rand(1,200)], $comment[mt_rand(1, 600)]);
+	}
+
+	for ($i=1;$i<401;$i++) {
+		do {
+			$l_user=$adb->load('user', mt_rand(1, 200));
+			$comments=$l_user['liked_comment'];
+		} while (!count($comments));
+		$adb->unrelate('user', 'liked_comment', $l_user['id'], $comments[mt_rand(0, count($comments)-1)]);
+	}
+
+	for ($i=1;$i<151;$i++) {
+		$adb->delete('comment', mt_rand(0, 600));
+	}
+
+	for ($i=1;$i<201;$i++) {
+		do {
+			$l_user=$adb->load('user', mt_rand(1, 200));
+			$posts=$l_user['liked_post'];
+		} while (!count($posts));
+		$adb->unrelate('user', 'liked_post', $l_user['id'], $posts[mt_rand(0, count($posts)-1)]);
+	}
+
+	for ($i=1;$i<101;$i++) {
+		$adb->delete('post', mt_rand(0, 400));
+	}
+
+	for ($i=1;$i<101;$i++) {
+		do {
+			$l_user=$adb->load('user', mt_rand(1, 200));
+			$friends=$l_user['friend'];
+			} while (!count($friends));
+		$adb->unrelate('user', 'friend', $l_user['id'], $friends[mt_rand(0, count($friend)-1)]);
+	}
+
+	for ($i=1;$i<51;$i++) {
+		$adb->delete('user', mt_rand(0, 200));
 	}
