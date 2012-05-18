@@ -48,7 +48,7 @@
 	}
 
 	echo '<h1>Top 10 Users with Most Posts</h1>' . "\n";
-	echo '<ul>\' . "\n';
+	echo '<ul>' . "\n";
 	foreach ($adb->id_list('user', false, 'post DESC', 10) as $id) {
 		$user=$adb->load($id);
 		echo '<li>' . $user['name'] . '(' . count($user['post']) . ')</li>' . "\n";
