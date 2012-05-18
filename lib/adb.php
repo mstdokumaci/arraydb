@@ -350,12 +350,12 @@
 				}
 				foreach ($item_model['many_to_many'] as $m2m) {
 					if ($p!=$m2m['local_name']) {continue;}
-					$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
+					$order=strtr($order, array($p=>"(SELECT COUNT(*) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
 					continue 2;
 				}
 				foreach ($item_model['self_ref'] as $self_ref) {
 					if ($p!=$self_ref) {continue;}
-					$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
+					$order=strtr($order, array($p=>"(SELECT COUNT(*) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
 					continue 2;
 				}
 			}
