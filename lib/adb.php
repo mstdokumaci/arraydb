@@ -83,6 +83,7 @@
 		}
 
 		function create_tables () {
+			$this->cache->flush();
 			$ddl=new DDL($this->DM);
 			$ddl->create_tables();
 		}

@@ -85,4 +85,17 @@
 					return false;
 			}
 		}
+
+		function flush () {
+			switch ($this->type) {
+				case 'apc':
+					return apc_clear_cache('user');
+				case 'memcached':
+					return memcache_flush($this->conn);
+				case 'file':
+					return system('rm -fr ' . $this->path . DIRECTORY_SEPARATOR . $this->prefix . '*');
+				case 'no-cache':
+					return false;
+			}
+		}
 	}
