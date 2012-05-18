@@ -191,8 +191,6 @@
 			$m2m=array_shift(array_filter($this->DM[$name]['many_to_many'], function ($m2m) use ($local_name) {return $m2m['local_name']==$local_name;}));
 			if (empty($m2m)) return $this->self_unrelate($name, $local_name, $id1, $id2);
 
-			$m2m=array_shift($m2m);
-
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($m2m['type'], $id2);
 

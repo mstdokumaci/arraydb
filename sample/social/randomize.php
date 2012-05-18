@@ -2,7 +2,7 @@
 
 	require_once('config.php');
 
-	set_time_limit(60);
+	set_time_limit(100);
 
 	$names=array(
 		'Jacob', 'Sophia', 'Mason', 'Isabella', 'William', 'Emma', 'Jayden', 'Olivia',
