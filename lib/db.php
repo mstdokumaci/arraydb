@@ -27,7 +27,7 @@
 		}
 
 		function update ($table, $data, $condition='TRUE') {
-			$data=array_map(function ($k, $v) {return $k . "='" . $this->escape($v) . "'";}, $data);
+			foreach ($data as $k=>$v) $data[$k]=$k . "='" . $this->escape($v) . "'";
 			if (!mysqli_query($this->conn, "UPDATE " . $table . " SET " . implode(', ', $data) . " WHERE " . $condition))
 				throw new Exception('MySQL update query error: ' . mysqli_error($this->conn));
 		}

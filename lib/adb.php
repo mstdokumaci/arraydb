@@ -127,7 +127,7 @@
 			return $id;
 		}
 
-		function delete ($name, $id) {
+		function delete ($name, $id, $delete_belongings=false) {
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
 			$item_model=$this->DM[$name];
@@ -138,24 +138,28 @@
 
 			$this->db->delete($name, "id='" . $id . "'");
 
-			foreach (array_filter(function ($el) {return $el['foreign']!==false;}, $item_model['fields']) as $k=>$f) {
-				$foreign_item=$this->load($f['foreign']['type'], intval($f['foreign']['id']));
+			foreach (array_filter($item_model['fields'], function ($el) {return $el['foreign']!==false;}) as $k=>$f) {
+				$foreign_item=$this->load($f['foreign']['type'], intval($item[$k]));
 				$foreign_item->delete_relation($f['foreign']['field'], $id);
 			}
 			foreach ($item_model['has_many'] as $has_many) {
 				foreach ($item[$has_many['local_name']] as $foreign_id) {
-					$foreign_item=$this->load($has_many['type'], $foreign_id);
-					$foreign_item[$has_many['foreign_name']]=0;
+					if ($delete_belongings) {
+						$this->delete($has_many['type'], $foreign_id, $delete_belongings);
+					} else {
+						$foreign_item=$this->load($has_many['type'], $foreign_id);
+						$foreign_item[$has_many['foreign_name']]=0;
+					}
 				}
 			}
 			foreach ($item_model['many_to_many'] as $m2m) {
 				foreach ($item[$m2m['local_name']] as $foreign_id) {
-					$this->unrelate($name, $id, $m2m['type'], $foreign_id, $m2m['relation_name']);
+					$this->unrelate($name, $m2m['local_name'], $id, $foreign_id);
 				}
 			}
 			foreach ($item_model['self_ref'] as $self_ref) {
 				foreach ($item[$self_ref] as $self_ref_id) {
-					$this->unrelate_self_ref($name, $self_ref, $id, $self_ref_id);
+					$this->self_unrelate($name, $self_ref, $id, $self_ref_id);
 				}
 			}
 
@@ -205,7 +209,7 @@
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
-				throw new Exception('No defined relation to relate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
+				throw new Exception('No defined relation to relate ' . $name . ' (' . $id1 . ') to ' . $local_name . ' (' . $id2 . ')');
 
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($name, $id2);
@@ -224,7 +228,7 @@
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
-				throw new Exception('No defined relation to unrelate ' . $name . '(' . $id1 . ') to ' . $local_name . '(' . $id2 . ')');
+				throw new Exception('No defined relation to unrelate ' . $name . ' (' . $id1 . ') to ' . $local_name . ' (' . $id2 . ')');
 
 			$condition="(" . $name . "1='" . $id1 . "' AND " . $name . "2='" . $id2 . "') OR (" . $name . "1='" . $id2 . "' AND " . $name . "2='" . $id1 . "')";
 			$this->db->delete($local_name, $condition);

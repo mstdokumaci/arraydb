@@ -80,6 +80,7 @@
 				case 'memcached':
 					return memcache_delete($this->conn, $key, 0);
 				case 'file':
+					if (!is_file($this->path . DIRECTORY_SEPARATOR . $key)) return;
 					return unlink($this->path . DIRECTORY_SEPARATOR . $key);
 				case 'no-cache':
 					return false;

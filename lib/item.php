@@ -17,7 +17,9 @@
 			if (isset(self::$ITEM[$name][$id])) {
 				$this->data=self::$ITEM[$name][$id];
 				return;
-			} elseif ($data=$this->cache->get('item_' . $this->name . '_' . $this->id)) {
+			}
+
+			if ($data=$this->cache->get('item_' . $this->name . '_' . $this->id)) {
 				$this->data=$data;
 				return;
 			}
@@ -83,8 +85,10 @@
 				$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($this->data[$field]));
 				$foreign_item->delete_relation($field_model['foreign']['field'], $this->id);
 
-				$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($value));
-				$foreign_item->add_relation($field_model['foreign']['field'], $this->id);
+				if ($value!=0) {
+					$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($value));
+					$foreign_item->add_relation($field_model['foreign']['field'], $this->id);
+				}
 			}
 			$this->data[$field]=$value;
 			$this->data['update_date']=$_SERVER['REQUEST_TIME'];

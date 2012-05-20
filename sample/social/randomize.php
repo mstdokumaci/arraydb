@@ -2,7 +2,7 @@
 
 	require_once('config.php');
 
-	set_time_limit(100);
+	set_time_limit(200);
 
 	$names=array(
 		'Jacob', 'Sophia', 'Mason', 'Isabella', 'William', 'Emma', 'Jayden', 'Olivia',
@@ -41,7 +41,14 @@
 	$post_text_count=count($post_texts)-1;
 	$comment_text_count=count($comment_texts)-1;
 
-	for ($i=1;$i<201;$i++) {
+	$user_count=200;
+	$friend_count=400;
+	$post_count=400;
+	$post_like_count=800;
+	$comment_count=600;
+	$comment_like_count=1200;
+
+	for ($i=1;$i<=$user_count;$i++) {
 		$name=$names[mt_rand(0, $name_count)];
 		$surname=$surnames[mt_rand(0, $surname_count)];
 
@@ -52,65 +59,80 @@
 		));
 	}
 
-	for ($i=1;$i<401;$i++) {
-		$adb->relate('user', 'friend', $user[mt_rand(1,200)], $user[mt_rand(1, 200)]);
+	for ($i=1;$i<=$friend_count;$i++) {
+		$adb->relate('user', 'friend', $user[mt_rand(1, $user_count)], $user[mt_rand(1, $user_count)]);
 	}
 
-	for ($i=1;$i<401;$i++) {
+	for ($i=1;$i<=$post_count;$i++) {
 		$post[$i]=$adb->create('post', array(
-			'writer'=>$user[mt_rand(1,200)],
+			'writer'=>$user[mt_rand(1, $user_count)],
 			'text'=>$post_texts[mt_rand(0, $post_text_count)]
 		));
 	}
 
-	for ($i=1;$i<801;$i++) {
-		$adb->relate('user', 'liked_post', $user[mt_rand(1,200)], $post[mt_rand(1, 400)]);
+	for ($i=1;$i<=$post_like_count;$i++) {
+		$adb->relate('user', 'liked_post', $user[mt_rand(1, $user_count)], $post[mt_rand(1, $post_count)]);
 	}
 
-	for ($i=1;$i<601;$i++) {
+	for ($i=1;$i<=$comment_count;$i++) {
 		$comment[$i]=$adb->create('comment', array(
-			'post'=>$post[mt_rand(1,400)],
-			'writer'=>$user[mt_rand(1,200)],
+			'post'=>$post[mt_rand(1, $post_count)],
+			'writer'=>$user[mt_rand(1, $user_count)],
 			'text'=>$comment_texts[mt_rand(0, $comment_text_count)]
 		));
 	}
 
-	for ($i=1;$i<1201;$i++) {
-		$adb->relate('user', 'liked_comment', $user[mt_rand(1,200)], $comment[mt_rand(1, 600)]);
+	for ($i=1;$i<=$comment_like_count;$i++) {
+		$adb->relate('user', 'liked_comment', $user[mt_rand(1, $user_count)], $comment[mt_rand(1, $comment_count)]);
 	}
 
-	for ($i=1;$i<401;$i++) {
+	for ($i=1;$i<=($comment_like_count/4);$i++) {
 		do {
-			$l_user=$adb->load('user', mt_rand(1, 200));
+			$l_user=$adb->load('user', mt_rand(1, $user_count));
 			$comments=$l_user['liked_comment'];
 		} while (!count($comments));
-		$adb->unrelate('user', 'liked_comment', $l_user['id'], $comments[mt_rand(0, count($comments)-1)]);
+		shuffle($comments);
+		$adb->unrelate('user', 'liked_comment', $l_user['id'], array_shift($comments));
 	}
 
-	for ($i=1;$i<151;$i++) {
-		$adb->delete('comment', mt_rand(0, 600));
+	for ($i=1;$i<=($comment_count/4);$i++) {
+		try {
+			$adb->delete('comment', mt_rand(1, $comment_count), true);
+		} catch (Exception $e) {
+			echo $e->getMessage() . "<br />\n";
+		}
 	}
 
-	for ($i=1;$i<201;$i++) {
+	for ($i=1;$i<=($post_like_count/4);$i++) {
 		do {
-			$l_user=$adb->load('user', mt_rand(1, 200));
+			$l_user=$adb->load('user', mt_rand(1, $user_count));
 			$posts=$l_user['liked_post'];
 		} while (!count($posts));
-		$adb->unrelate('user', 'liked_post', $l_user['id'], $posts[mt_rand(0, count($posts)-1)]);
+		shuffle($posts);
+		$adb->unrelate('user', 'liked_post', $l_user['id'], array_shift($posts));
 	}
 
-	for ($i=1;$i<101;$i++) {
-		$adb->delete('post', mt_rand(0, 400));
+	for ($i=1;$i<=($post_count/4);$i++) {
+		try {
+			$adb->delete('post', mt_rand(1, $post_count), true);
+		} catch (Exception $e) {
+			echo $e->getMessage() . "<br />\n";
+		}
 	}
 
-	for ($i=1;$i<101;$i++) {
+	for ($i=1;$i<=($friend_count/4);$i++) {
 		do {
-			$l_user=$adb->load('user', mt_rand(1, 200));
+			$l_user=$adb->load('user', mt_rand(1, $user_count));
 			$friends=$l_user['friend'];
-			} while (!count($friends));
-		$adb->unrelate('user', 'friend', $l_user['id'], $friends[mt_rand(0, count($friend)-1)]);
+		} while (!count($friends));
+		shuffle($friends);
+		$adb->unrelate('user', 'friend', $l_user['id'], array_shift($friends));
 	}
 
-	for ($i=1;$i<51;$i++) {
-		$adb->delete('user', mt_rand(0, 200));
+	for ($i=1;$i<=($user_count/4);$i++) {
+		try {
+			$adb->delete('user', mt_rand(1, $user_count), true);
+		} catch (Exception $e) {
+			echo $e->getMessage() . "<br />\n";
+		}
 	}
