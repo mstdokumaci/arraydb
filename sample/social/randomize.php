@@ -43,10 +43,10 @@
 
 	$user_count=5;
 	$friend_count=10;
-	$post_count=10;
-	$post_like_count=20;
-	$comment_count=15;
-	$comment_like_count=30;
+	$post_count=15;
+	$post_like_count=40;
+	$comment_count=20;
+	$comment_like_count=50;
 
 	for ($i=1;$i<=$user_count;$i++) {
 		$name=$names[mt_rand(0, $name_count)];
