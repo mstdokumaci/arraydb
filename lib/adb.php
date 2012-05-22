@@ -167,7 +167,8 @@
 
 			unset($this->ITEM[$name][$id]);
 			unset($this->ROW[$name][$id]);
-			$this->cache->delete('item_' . $name . '_' . $id);
+
+			$item->delete();
 		}
 
 		function relate ($name, $local_name, $id1, $id2) {

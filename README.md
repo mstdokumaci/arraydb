@@ -1,7 +1,9 @@
 # arrayDB, new easy PHP ORM
 
 Define your data model as an array, reach your data as an array.
+
 For a complete example, please have a look at [this folder](https://github.com/mstdokumaci/arraydb/tree/master/sample/social).
+
 For a sneak peak, follow the document.
 
 ## Simple usage
@@ -19,3 +21,20 @@ For a sneak peak, follow the document.
 
 		echo "<br />\n";
 	}
+
+### Adding / updating some data
+
+	$uid1=$adb->create('user', array('name'=>'Mustafa'));
+
+	$user1=$adb->load('user', $uid1);
+
+	$user1['name']='Mercan';
+	// no save needed, data saved automatically
+
+
+### Setting relations
+
+	$uid2=$adb->create('user', array('name'=>'Mustafa'));
+
+	$adb->relate('user', 'friend', $uid1, $uid2);
+

@@ -230,4 +230,8 @@
 			$this->cache->set('item_' . $this->name . '_' . $this->id, $this->data,$this->model['conf']['ttl']);
 			self::$ITEM[$this->name][$this->id]=$this->data;
 		}
+
+		public function delete () {
+			unset(self::$ITEM[$this->name][$this->id]);
+		}
 	}

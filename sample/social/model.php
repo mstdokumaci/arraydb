@@ -20,6 +20,7 @@
 			),
 			'self_ref'=>array('friend')
 		),
+
 		'post'=>array(
 			'conf'=>array(
 				'len'=>8
@@ -31,6 +32,7 @@
 				array('type'=>'comment')
 			)
 		),
+
 		'comment'=>array(
 			'conf'=>array(
 				'len'=>10
