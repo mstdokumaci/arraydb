@@ -77,6 +77,7 @@
 		echo '<li>' . $post['text'] . ' (' . count($post['comment']) . ')</li>' . "\n";
 	}
 	echo '</ul>' . "\n";
+
 	echo '<h1>Top 5 Comments with Most Likes</h1>' . "\n";
 	echo '<ul>' . "\n";
 	foreach ($adb->id_list('comment', false, 'liker DESC', 5) as $id) {
