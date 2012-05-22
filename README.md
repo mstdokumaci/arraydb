@@ -1,6 +1,8 @@
-# arrayDB, new easy PHP ORM=
+# arrayDB, new easy PHP ORM
 
 Define your data model as an array, reach your data as an array.
+For a complete example, please have a look at [this folder](https://github.com/mstdokumaci/arraydb/tree/master/sample/social).
+For a sneak peak, follow the document.
 
 ## Simple usage
 
