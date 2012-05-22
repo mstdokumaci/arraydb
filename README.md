@@ -38,3 +38,6 @@ For a sneak peak, follow the document.
 
 	$adb->relate('user', 'friend', $uid1, $uid2);
 
+### Removing items
+
+	$adb->delete('user', $uid1);

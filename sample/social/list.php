@@ -3,12 +3,14 @@
 	require_once('config.php');
 
 	foreach ($adb->id_list('user') as $id) {
+		// load user
 		$user=$adb->load('user', $id);
 		echo '<h1>' . $user['name'] . '</h1>' . "\n";
 
 		echo '<h2>Friends: </h1>' . "\n";
 		echo '<ul>' . "\n";
 		foreach ($user['friend'] as $fid) {
+			// load friend of user
 			$friend=$adb->load('user', $fid);
 			echo '<li>' . $friend['name'] . '</li>' . "\n";
 		}
@@ -17,9 +19,11 @@
 		echo '<h2>Posts: </h1>' . "\n";
 		echo '<ul>' . "\n";
 		foreach ($user['post'] as $pid) {
+			//load post of user
 			$post=$adb->load('post', $pid);
 			$likers=array();
 			foreach ($post['liker'] as $liker) {
+				// load liker of post
 				$liker=$adb->load('user', $liker);
 				$likers[]=$liker['name'];
 			}
@@ -31,10 +35,13 @@
 			echo '<h3>Comments: </h1>' . "\n";
 			echo '<ul>' . "\n";
 			foreach ($post['comment'] as $cid) {
+				// load comment of post
 				$comment=$adb->load('comment', $cid);
+				// load commenter of comment
 				$commenter=$adb->load('user', $comment['writer']);
 				$likers=array();
 				foreach ($comment['liker'] as $liker) {
+					// load liker of comment
 					$liker=$adb->load('user', $liker);
 					$likers[]=$liker['name'];
 				}
