@@ -41,12 +41,12 @@
 	$post_text_count=count($post_texts)-1;
 	$comment_text_count=count($comment_texts)-1;
 
-	$user_count=20;
-	$friend_count=40;
-	$post_count=40;
-	$post_like_count=80;
-	$comment_count=60;
-	$comment_like_count=120;
+	$user_count=5;
+	$friend_count=10;
+	$post_count=10;
+	$post_like_count=20;
+	$comment_count=15;
+	$comment_like_count=30;
 
 	for ($i=1;$i<=$user_count;$i++) {
 		$name=$names[mt_rand(0, $name_count)];
