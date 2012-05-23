@@ -109,7 +109,7 @@ We provide the name of item and an array of data by field names to create an ite
 
 ### Creating Many-to-many Relations
 
-First parameter is the name of first item. Second parameter is the local name of second item in first item. Third parameter is id of first item. Fourth parameter is id of second item.
+First parameter is the name of item. Second parameter is the local name of related item. Third parameter is id of item. Fourth parameter is id of related item.
 
 	$adb->relate('user', 'liked_posts', $uid1, $pid1); // self post liking :)
 	$adb->relate('user', 'liked_posts', $uid1, $pid2);
@@ -117,4 +117,28 @@ First parameter is the name of first item. Second parameter is the local name of
 	$adb->relate('user', 'liked_posts', $uid2, $pid1);
 
 ### Listing All Data
+
+We can list all users with posts and their likers in a simple loop:
+
+	foreach ($adb->id_list('user') as $uid) {
+		// load user
+		$user=$adb->load('user', $uid);
+		echo '<h1>' . $user['name'] . '</h1>' . "\n";
+
+		echo '<h2>Posts: </h2>' . "\n";
+		echo '<ul>' . "\n";
+		foreach ($user['post'] as $pid) {
+			//load post of user
+			$post=$adb->load('post', $pid);
+			$likers=array();
+			foreach ($post['liker'] as $liker) {
+				// load liker of post
+				$liker=$adb->load('user', $liker);
+				$likers[]=$liker['name'];
+			}
+			$likers=(count($likers)) ? '<br />' . implode(', ', $likers) . ' liked.' : '';
+			echo '<li>' . $post['text'] . ' ' . $likers . '</li>' . "\n";
+		}
+		echo '</ul>' . "\n";
+	}
 
