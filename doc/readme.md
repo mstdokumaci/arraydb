@@ -54,3 +54,16 @@ This is also writing an array like this:
 
 ## Defining cache config
 
+For now, we have three cache types implemented: APC, Memcached and plain text file.
+
+To use APC, this config array is enough:
+
+	$cache_config=array('type'=>'apc');
+
+To use Memcached, you need to give some parameters:
+
+	$cache_config=array('type'=>'memcached', 'host'=>'127.0.0.1', 'port'=>11211, 'timeout'=>1);
+
+To use plain text files, you need to create a readable and writable directory and provide the absolute path:
+
+	$cache_config=array('type'=>'file', 'path'=>'/tmp/my_project_cache');
