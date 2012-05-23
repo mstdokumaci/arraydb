@@ -7,7 +7,7 @@
 		$user=$adb->load('user', $id);
 		echo '<h1>' . $user['name'] . '</h1>' . "\n";
 
-		echo '<h2>Friends: </h1>' . "\n";
+		echo '<h2>Friends: </h2>' . "\n";
 		echo '<ul>' . "\n";
 		foreach ($user['friend'] as $fid) {
 			// load friend of user
@@ -16,7 +16,7 @@
 		}
 		echo '</ul>' . "\n";
 
-		echo '<h2>Posts: </h1>' . "\n";
+		echo '<h2>Posts: </h2>' . "\n";
 		echo '<ul>' . "\n";
 		foreach ($user['post'] as $pid) {
 			//load post of user
@@ -32,7 +32,7 @@
 			if (empty($post['comment'])) continue;
 
 			echo '<div style="margin-left:20px;">' . "\n";
-			echo '<h3>Comments: </h1>' . "\n";
+			echo '<h3>Comments: </h3>' . "\n";
 			echo '<ul>' . "\n";
 			foreach ($post['comment'] as $cid) {
 				// load comment of post
