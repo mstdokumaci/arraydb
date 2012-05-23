@@ -127,13 +127,13 @@ We can list all users with posts and their likers in a simple loop:
 
 		echo '<h2>Posts: </h2>' . "\n";
 		echo '<ul>' . "\n";
-		foreach ($user['post'] as $pid) {
+		foreach ($user['posts'] as $pid) {
 			//load post of user
 			$post=$adb->load('post', $pid);
 			$likers=array();
-			foreach ($post['liker'] as $liker) {
+			foreach ($post['likers'] as $lid) {
 				// load liker of post
-				$liker=$adb->load('user', $liker);
+				$liker=$adb->load('user', $lid);
 				$likers[]=$liker['name'];
 			}
 			$likers=(count($likers)) ? '<br />' . implode(', ', $likers) . ' liked.' : '';
