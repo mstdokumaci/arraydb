@@ -67,3 +67,54 @@ To use Memcached, you need to give some parameters:
 To use plain text files, you need to create a readable and writable directory and provide the absolute path:
 
 	$cache_config=array('type'=>'file', 'path'=>'/tmp/my_project_cache');
+
+## Start Using
+
+Time to use what we all defined. We just need these lines to initialize the library.
+
+	DB::init($db_config);
+	CACHE::init($cache_config);
+
+	ADB::init($model);
+	$adb=ADB::get_instance();
+
+## Creating Tables
+
+This is a one time job. We tell the library to create the DB tables as required. It does all the hard work for relations and etc.
+
+	$adb->create_tables();
+
+We need to run this method once when we deploy it to somewhere and never again. It causes data loss if called after inserting data.
+
+## Using Items
+
+We have this $adb instance in hand. We will reach all the data through that.
+
+### Creating Items
+
+We provide the name of item and an array of data by field names to create an item.
+
+	$uid1=$adb->create('user', array('name'=>'John'));
+	$uid2=$adb->create('user', array('name'=>'Marry'));
+
+	$pid1=$adb->create('post', array(
+		'writer'=>$uid1,
+		'text'=>'What a wonderful world!'
+	));
+
+	$pid2=$adb->create('post', array(
+		'writer'=>$uid2,
+		'text'=>'Life is beautiful!'
+	));
+
+### Creating Many-to-many Relations
+
+First parameter is the name of first item. Second parameter is the local name of second item in first item. Third parameter is id of first item. Fourth parameter is id of second item.
+
+	$adb->relate('user', 'liked_posts', $uid1, $pid1); // self post liking :)
+	$adb->relate('user', 'liked_posts', $uid1, $pid2);
+
+	$adb->relate('user', 'liked_posts', $uid2, $pid1);
+
+### Listing All Data
+
