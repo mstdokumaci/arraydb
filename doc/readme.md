@@ -26,7 +26,7 @@ All data model definiton is writing down an array like this:
 				'posts'=>array('type'=>'post', 'foreign_name'=>'writer')
 			),
 			'many_to_many'=>array(
-				'liked_posts'=>array('type'=>'post', 'foreign_name'=>'liker'),
+				'liked_posts'=>array('type'=>'post', 'foreign_name'=>'likers'),
 			)
 		),
 
@@ -40,4 +40,17 @@ All data model definiton is writing down an array like this:
 
 We have 2 items here. User and post. Users has names, many written posts and many liked posts. Posts has texts and likers.
 
-With this model, we want to
+With this model, we want to reach posts of auser as $user['posts'] and writers of apost as $post['writer']. This is a one-to-many relation.
+
+We also want to reach liked posts of a user as $user['liked_posts'] and likers of a post as $post['likers']. This is a many-to-many relation.
+
+## Defining MySQL access
+
+This is also writing an array like this:
+
+	$db_config=array(
+		'hostname'=>'localhost', 'database'=>'social', 'username'=>'root', 'password'=>''
+	);
+
+## Defining cache config
+
