@@ -221,7 +221,7 @@ For a separate post page, our code will be this simple:
 
 Is there any queries or cache logics in this code? No, that's the main goal, simplicity.
 
-There are a lot of famous alternatives to use. They are documented better and supported better. This library is not one of them, not a well oiled machine yet. But the most simple and easy to learn approach in my opinion. If the goal of ORM libraries is to isolate coder from DB logic, this one is the most assertive newcoming. jQuery is the easiest javascript framework and became a standard just because of that. So, an easy to use PHP ORM library has a chance that way.
+There are a lot of famous alternatives to use. They are documented better and supported better. This library is not one of them, not a well oiled machine yet. But the most simple and easy to learn approach in my opinion. If the goal of ORM libraries is to isolate coder from DB logic, this one is the most assertive newcoming. jQuery was the easiest javascript framework and became a standard just because of that. So, an easy to use PHP ORM library has a chance that way.
 
 All ideas and contributions are welcomed.
 
