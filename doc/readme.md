@@ -36,6 +36,7 @@ All data model definiton is writing down an array like this:
 			'fields'=>array(
 				'text'=>array('len'=>200),
 				'view_count'=>array('type'=>'numeric', 'len'=>5)
+				// default field type is text, define if numeric
 			)
 		)
 	);
@@ -197,10 +198,33 @@ We want to get 5 most liked posts for example. All we need is this:
 		// do anything with post
 	}
 
-We want to get posts of a user with more than 5 likes. Here it is:
+Or we want to get posts of a user with more than 5 likes. Here it is:
 
 	$user=$adb->load('user', $uid1);
 	foreach ($user->id_list('post', 'view_count>5') as $pid) {
 		$post=$adb->load('post', $pid);
 		// do anything with post
 	}
+
+# The Main Goal
+
+For a separate post page, our code will be this simple:
+
+	$post=$adb->load('post', $pid1);
+	$writer=$adb->load('user', $post['writer']);
+
+	echo $writer['name'] . ' wrote' . "<br />\n";
+	echo $post['text'] . "<br />\n";
+
+	$post['view_count']++;
+	// yes, increasing view_count is this simple
+
+Is there any queries or cache logics in this code? No, that's the main goal, simplicity.
+
+There are a lot of famous alternatives to use. They are documented better and supported better. This library is not one of them, not a well oiled machine yet. But the most simple and easy to learn approach in my opinion. If the goal of ORM libraries is to isolate coder from DB logic, this one is the most assertive newcoming. jQuery is the easiest javascript framework and became a standard just because of that. So, an easy to use PHP ORM library has a chance that way.
+
+All ideas and contributions are welcomed.
+
+Thanks for the interest.
+
+Mustafa Dokumacı
