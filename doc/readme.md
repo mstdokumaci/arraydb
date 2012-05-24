@@ -193,7 +193,7 @@ We can delete items with keeping belongings or removing belongings.
 
 We want to get 5 most liked posts for example. All we need is this:
 
-	foreach ($adb->id_list('post', false, 'comment DESC', 5) as $pid) {
+	foreach ($adb->id_list('post', false, 'likers DESC', 5) as $pid) {
 		$post=$adb->load('post', $pid);
 		// do anything with post
 	}
