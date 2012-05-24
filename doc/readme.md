@@ -47,7 +47,7 @@ Users has names, many written posts and many liked posts. Posts has texts, view 
 
 Users also has many users as friends.
 
-With this model, we want to reach posts of a user as $user['posts'] and writers of apost as $post['writer']. This is a one-to-many relation.
+With this model, we want to reach posts of a user as $user['posts'] and writers of a post as $post['writer']. This is a one-to-many relation.
 
 We also want to reach liked posts of a user as $user['liked_posts'] and likers of a post as $post['likers']. This is a many-to-many relation.
 
@@ -55,7 +55,7 @@ Finally we want to reach friends of a user as $user['friends']. This is a self-r
 
 ## Defining MySQL access
 
-This is also writing an array like this:
+Defining MySQL access is also writing an array like this:
 
 	$db_config=array(
 		'hostname'=>'localhost', 'database'=>'social', 'username'=>'root', 'password'=>''
