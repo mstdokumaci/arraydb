@@ -34,14 +34,15 @@ All data model definiton is writing down an array like this:
 		'post'=>array(
 			'conf'=>array('len'=>10),
 			'fields'=>array(
-				'text'=>array('len'=>200)
+				'text'=>array('len'=>200),
+				'view_count'=>array('type'=>'numeric', 'len'=>5)
 			)
 		)
 	);
 
 We have 2 items here: User and post.
 
-Users has names, many written posts and many liked posts. Posts has texts and likers.
+Users has names, many written posts and many liked posts. Posts has texts, view counts and likers.
 
 Users also has many users as friends.
 
@@ -138,10 +139,12 @@ We can list all users with posts and their likers in a simple loop:
 
 		echo '<h2>Posts: </h2>' . "\n";
 		echo '<ul>' . "\n";
+
 		foreach ($user['posts'] as $pid) {
 			//load post of user
 			$post=$adb->load('post', $pid);
 			$likers=array();
+
 			foreach ($post['likers'] as $lid) {
 				// load liker of post
 				$liker=$adb->load('user', $lid);
@@ -150,6 +153,7 @@ We can list all users with posts and their likers in a simple loop:
 			$likers=(count($likers)) ? '<br />' . implode(', ', $likers) . ' liked.' : '';
 			echo '<li>' . $post['text'] . ' ' . $likers . '</li>' . "\n";
 		}
+
 		echo '</ul>' . "\n";
 	}
 
@@ -182,5 +186,21 @@ We can delete items with keeping belongings or removing belongings.
 	// user deleted, posts remain unowned.
 
 	$adb->delete('user', $uid1, true);
-	// user and posts of user all deleted.
+	// user and all posts of user deleted.
 
+### Querying More
+
+We want to get 5 most liked posts for example. All we need is this:
+
+	foreach ($adb->id_list('post', false, 'comment DESC', 5) as $pid) {
+		$post=$adb->load('post', $pid);
+		// do anything with post
+	}
+
+We want to get posts of a user with more than 5 likes. Here it is:
+
+	$user=$adb->load('user', $uid1);
+	foreach ($user->id_list('post', 'view_count>5') as $pid) {
+		$post=$adb->load('post', $pid);
+		// do anything with post
+	}
