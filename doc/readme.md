@@ -47,7 +47,7 @@ Users has names, many written posts and many liked posts. Posts has texts, view 
 
 Users also has many users as friends.
 
-With this model, we want to reach posts of auser as $user['posts'] and writers of apost as $post['writer']. This is a one-to-many relation.
+With this model, we want to reach posts of a user as $user['posts'] and writers of apost as $post['writer']. This is a one-to-many relation.
 
 We also want to reach liked posts of a user as $user['liked_posts'] and likers of a post as $post['likers']. This is a many-to-many relation.
 
