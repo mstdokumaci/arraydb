@@ -120,7 +120,7 @@ We provide the name of item and an array of data by field names to create an ite
 
 ### Creating Many-to-many Relations
 
-First parameter is the name of item. Second parameter is the local name of related item. Third parameter is id of item. Fourth parameter is id of related item.
+First parameter is the name of the item. Second parameter is the local name of the related item. Third parameter is the id of the item. Fourth parameter is the id of the related item.
 
 	$adb->relate('user', 'friends', $uid1, $uid2);
 
