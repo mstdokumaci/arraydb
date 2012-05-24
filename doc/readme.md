@@ -27,7 +27,8 @@ All data model definiton is writing down an array like this:
 			),
 			'many_to_many'=>array(
 				'liked_posts'=>array('type'=>'post', 'foreign_name'=>'likers'),
-			)
+			),
+			'self_ref'=>array('friends')
 		),
 
 		'post'=>array(
@@ -38,11 +39,17 @@ All data model definiton is writing down an array like this:
 		)
 	);
 
-We have 2 items here. User and post. Users has names, many written posts and many liked posts. Posts has texts and likers.
+We have 2 items here: User and post.
+
+Users has names, many written posts and many liked posts. Posts has texts and likers.
+
+Users also has many users as friends.
 
 With this model, we want to reach posts of auser as $user['posts'] and writers of apost as $post['writer']. This is a one-to-many relation.
 
 We also want to reach liked posts of a user as $user['liked_posts'] and likers of a post as $post['likers']. This is a many-to-many relation.
+
+Finally we want to reach friends of a user as $user['friends']. This is a self-referencing relation.
 
 ## Defining MySQL access
 
@@ -67,6 +74,8 @@ To use Memcached, you need to give some parameters:
 To use plain text files, you need to create a readable and writable directory and provide the absolute path:
 
 	$cache_config=array('type'=>'file', 'path'=>'/tmp/my_project_cache');
+
+There is an optional "prefix" parameter. It applied to cache keys if given.
 
 ## Start Using
 
@@ -111,12 +120,14 @@ We provide the name of item and an array of data by field names to create an ite
 
 First parameter is the name of item. Second parameter is the local name of related item. Third parameter is id of item. Fourth parameter is id of related item.
 
+	$adb->relate('user', 'friends', $uid1, $uid2);
+
 	$adb->relate('user', 'liked_posts', $uid1, $pid1); // self post liking :)
 	$adb->relate('user', 'liked_posts', $uid1, $pid2);
 
 	$adb->relate('user', 'liked_posts', $uid2, $pid1);
 
-### Listing All Data
+### Listing Data
 
 We can list all users with posts and their likers in a simple loop:
 
@@ -141,4 +152,35 @@ We can list all users with posts and their likers in a simple loop:
 		}
 		echo '</ul>' . "\n";
 	}
+
+### Updating Items
+
+We can update any field of any item like this:
+
+	$user1=$adb->load('user', $uid1);
+	$user1['name']='Jack';
+	// no save method needed, save and keeping cache updated is all automated.
+
+If we need to update more than a field at a time, this is the alternative:
+
+	$post1=$adb->load('post', $pid1);
+	$post1->update(array('writer'=>$uid2, 'text'=>'Not a wonderful world!'));
+
+### Removing Relations
+
+It's just same as relating:
+
+	$adb->unrelate('user', 'friends', $uid1, $uid2);
+
+	$adb->unrelate('user', 'liked_posts', $uid1, $pid1);
+
+### Removing Items
+
+We can delete items with keeping belongings or removing belongings.
+
+	$adb->delete('user', $uid1);
+	// user deleted, posts remain unowned.
+
+	$adb->delete('user', $uid1, true);
+	// user and posts of user all deleted.
 
