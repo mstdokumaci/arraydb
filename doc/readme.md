@@ -8,7 +8,7 @@ arrayDB ORM library has only 5 classes. You mostly use a singleton of one, other
 
 To start using this library, you have to do 3 simple definitions.
 
-- Define your data model (what items you need to keep, what are their fields and relations with each other).
+- Define your data model (what items you need to keep, what are their fields and their relations with each other).
 - Define your MySQL access.
 - Define your cache config.
 
@@ -225,6 +225,6 @@ There are a lot of famous alternatives to use. They are documented better and su
 
 All ideas and contributions are welcomed.
 
-Thanks for the interest.
+Thanks for the interest, sorry for inadequate English.
 
 Mustafa Dokumacı
