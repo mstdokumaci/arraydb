@@ -134,10 +134,6 @@
 
 			$item=$this->load($name, $id);
 
-			$this->cache->delete('item_' . $name . '_' . $id);
-
-			$this->db->delete($name, "id='" . $id . "'");
-
 			foreach (array_filter($item_model['fields'], function ($el) {return $el['foreign']!==false;}) as $k=>$f) {
 				$foreign_item=$this->load($f['foreign']['type'], intval($item[$k]));
 				$foreign_item->delete_relation($f['foreign']['field'], $id);
@@ -162,6 +158,8 @@
 					$this->self_unrelate($name, $self_ref, $id, $self_ref_id);
 				}
 			}
+
+			$this->db->delete($name, "id='" . $id . "'");
 
 			unset($this->LIST[$name], $this->COUNT[$name]);
 
