@@ -20,8 +20,8 @@
 		}
 
 		function insert ($table, $data) {
-			foreach ($data as $k=>$v) $data[$k]=$k . "='" . $this->escape($v) . "'";
-			if (!mysqli_query($this->conn, "INSERT INTO " . $table . " SET " . implode(', ', $data)))
+			foreach ($data as $k=>$v) $data[$k]="`" . $k . "`='" . $this->escape($v) . "'";
+			if (!mysqli_query($this->conn, "INSERT INTO `" . $table . "` SET " . implode(', ', $data)))
 				throw new Exception('MySQL insert query error: ' . mysqli_error($this->conn));
 			return mysqli_insert_id($this->conn);
 		}

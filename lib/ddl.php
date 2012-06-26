@@ -14,9 +14,9 @@
 				$this->table[$name]=$this->prepare_table($name, $table);
 
 			foreach ($this->table as $name=>$table) {
-				$sql="DROP TABLE IF EXISTS " . $name;
+				$sql="DROP TABLE IF EXISTS `" . $name . "`";
 				$this->db->table($sql);
-				$sql="CREATE TABLE " . $name . " (" . implode(', ', array_merge($table['fields'], $table['keys'])) . ") ENGINE=InnoDB";
+				$sql="CREATE TABLE `" . $name . "` (" . implode(', ', array_merge($table['fields'], $table['keys'])) . ") ENGINE=InnoDB";
 				$this->db->table($sql);
 			}
 		}
@@ -41,16 +41,16 @@
 				if (isset($this->table[$m2m['relation_name']]['created'])) {continue;}
 				$this->table[$m2m['relation_name']]['created']=true;
 
-				$this->table[$m2m['relation_name']]['fields'][]=$m2m['foreign_name'] . ' ' . $this->get_field_type('numeric', $conf['len']) . " NOT NULL DEFAULT '0'";
-				$this->table[$m2m['relation_name']]['fields'][]=$m2m['local_name'] . ' ' . $this->get_field_type('numeric', $this->DM[$m2m['type']]['conf']['len']) . " NOT NULL DEFAULT '0'";
-				$this->table[$m2m['relation_name']]['keys'][]='PRIMARY KEY (' . $m2m['foreign_name'] . ', ' . $m2m['local_name'] . ')';
+				$this->table[$m2m['relation_name']]['fields'][]='`' . $m2m['foreign_name'] . '` ' . $this->get_field_type('numeric', $conf['len']) . " NOT NULL DEFAULT '0'";
+				$this->table[$m2m['relation_name']]['fields'][]='`' . $m2m['local_name'] . '` ' . $this->get_field_type('numeric', $this->DM[$m2m['type']]['conf']['len']) . " NOT NULL DEFAULT '0'";
+				$this->table[$m2m['relation_name']]['keys'][]='PRIMARY KEY (`' . $m2m['foreign_name'] . '`, `' . $m2m['local_name'] . '`)';
 			}
 
 			foreach ($table['self_ref'] as $self_ref) {
 				$type=$this->get_field_type('numeric', $conf['len']);
-				$this->table[$self_ref]['fields'][]=$name . '1 ' . $type . " NOT NULL DEFAULT '0'";
-				$this->table[$self_ref]['fields'][]=$name . '2 ' . $type . " NOT NULL DEFAULT '0'";
-				$this->table[$self_ref]['keys'][]='PRIMARY KEY (' . $name . '1, ' . $name . '2)';
+				$this->table[$self_ref]['fields'][]='`' . $name . '1` ' . $type . " NOT NULL DEFAULT '0'";
+				$this->table[$self_ref]['fields'][]='`' . $name . '2` ' . $type . " NOT NULL DEFAULT '0'";
+				$this->table[$self_ref]['keys'][]='PRIMARY KEY (`' . $name . '1`, `' . $name . '2`)';
 			}
 
 			return $db_table;
@@ -62,13 +62,13 @@
 			else
 				$type=$this->get_field_type($field['type'], $field['len']);
 
-			$db_field=$name . ' ' . $type . " NOT NULL DEFAULT '" . ($field['type']=='numeric' ? '0' : '')  . "'";
+			$db_field='`' . $name . '` ' . $type . " NOT NULL DEFAULT '" . ($field['type']=='numeric' ? '0' : '')  . "'";
 			$db_key='';
 
 			if ($field['unique'])
-				$db_key='UNIQUE KEY (' . $name . ')';
+				$db_key='UNIQUE KEY (`' . $name . '`)';
 			elseif ($field['index'])
-				$db_key='KEY (' . $name . ')';
+				$db_key='KEY (`' . $name . '`)';
 
 			return array($db_field, $db_key);
 		}
