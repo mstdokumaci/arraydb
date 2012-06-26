@@ -199,7 +199,7 @@
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($m2m['type'], $id2);
 
-			$condition=$m2m['foreign_name'] . "='" . $id1 . "' AND " . $local_name . "='" . $id2 . "'";
+			$condition="`" . $m2m['foreign_name'] . "`='" . $id1 . "' AND `" . $local_name . "`='" . $id2 . "'";
 			$this->db->delete($m2m['relation_name'], $condition);
 
 			$item1->delete_relation($local_name, $id2);
@@ -231,7 +231,7 @@
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
 				throw new Exception('No defined relation to unrelate ' . $name . ' (' . $id1 . ') to ' . $local_name . ' (' . $id2 . ')');
 
-			$condition="(" . $name . "1='" . $id1 . "' AND " . $name . "2='" . $id2 . "') OR (" . $name . "1='" . $id2 . "' AND " . $name . "2='" . $id1 . "')";
+			$condition="(`" . $name . "1`='" . $id1 . "' AND `" . $name . "2`='" . $id2 . "') OR (`" . $name . "1`='" . $id2 . "' AND `" . $name . "2`='" . $id1 . "')";
 			$this->db->delete($local_name, $condition);
 
 			$item1=$this->load($name, $id1);
@@ -247,7 +247,7 @@
 			if (!isset($this->DM[$name]['fields'][$field]))
 				throw new Exception('No field as ' . $field . ' found for item ' . $name);
 
-			$sql="SELECT * FROM " . $name . " WHERE " . $field . "='" . $this->db->escape($value) . "'";
+			$sql="SELECT * FROM `" . $name . "` WHERE `" . $field . "`='" . $this->db->escape($value) . "'";
 			$result=$this->db->select($sql);
 			if (count($result)) {
 				$this->ROW[$name][$result[0]['id']]=$result[0];
@@ -319,7 +319,7 @@
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 			$item_model=$this->DM[$name];
 
-			$sql='SELECT * FROM ' . $name;
+			$sql='SELECT * FROM `' . $name . '`';
 			if ($condition!==false) $sql.=' WHERE ' . $condition;
 
 			if ($order!==false) $sql.=" ORDER BY " . $this->prepare_order($name, $order);
@@ -331,7 +331,7 @@
 			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
 			$item_model=$this->DM[$name];
 
-			$sql='SELECT ' . $name . '.* FROM ' . $name . ', ' . $table;
+			$sql='SELECT `' . $name . '`.* FROM `' . $name . '`, `' . $table . '`';
 			if ($condition!==false) $sql.=' WHERE ' . $condition;
 
 			if ($order!==false) $sql.=" ORDER BY " . $this->prepare_order($name, $order);
@@ -348,17 +348,17 @@
 				if (isset($item_model['fields'][$p])) {continue;}
 				foreach ($item_model['has_many'] as $has_many) {
 					if ($p!=$has_many['local_name']) {continue;}
-					$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM ". $has_many['type'] . " WHERE " . $has_many['foreign_name'] . "=" . $name . ".id)"));
+					$order=strtr($order, array($p=>"(SELECT COUNT(id) FROM `". $has_many['type'] . "` WHERE `" . $has_many['foreign_name'] . "`=" . $name . ".id)"));
 					continue 2;
 				}
 				foreach ($item_model['many_to_many'] as $m2m) {
 					if ($p!=$m2m['local_name']) {continue;}
-					$order=strtr($order, array($p=>"(SELECT COUNT(*) FROM ". $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "=" . $name . ".id)"));
+					$order=strtr($order, array($p=>"(SELECT COUNT(*) FROM `". $m2m['relation_name'] . "` WHERE `" . $m2m['foreign_name'] . "`=" . $name . ".id)"));
 					continue 2;
 				}
 				foreach ($item_model['self_ref'] as $self_ref) {
 					if ($p!=$self_ref) {continue;}
-					$order=strtr($order, array($p=>"(SELECT COUNT(*) FROM ". $self_ref . " WHERE " . $name . "1=" . $name . ".id OR " . $name . "2=" . $name . ".id)"));
+					$order=strtr($order, array($p=>"(SELECT COUNT(*) FROM `". $self_ref . "` WHERE `" . $name . "1`=" . $name . ".id OR `" . $name . "2`=" . $name . ".id)"));
 					continue 2;
 				}
 			}

@@ -27,7 +27,7 @@
 			if ($row!==false) {
 				$this->data=$row;
 			} else {
-				$sql="SELECT * FROM " . $this->name . " WHERE id='" . $this->id . "'";
+				$sql="SELECT * FROM `" . $this->name . "` WHERE id='" . $this->id . "'";
 				$result=$this->db->select($sql);
 				if (!count($result))
 					throw new Exception('No ' . $this->name . ' found with id ' . $this->id);
@@ -39,15 +39,15 @@
 				$this->data[$has_many['local_name']]=$this->adb->id_list($has_many['type'], $has_many['foreign_name'] . "='" . $this->id . "'");
 
 			foreach ($this->model['many_to_many'] as $m2m) {
-				$sql="SELECT " . $m2m['local_name'] . " FROM " . $m2m['relation_name'] . " WHERE " . $m2m['foreign_name'] . "='" . $id . "'";
+				$sql="SELECT `" . $m2m['local_name'] . "` FROM `" . $m2m['relation_name'] . "` WHERE `" . $m2m['foreign_name'] . "`='" . $id . "'";
 				$this->data[$m2m['local_name']]=array();
 				foreach ($this->db->select($sql) as $row) {
 					$this->data[$m2m['local_name']][]=intval($row[$m2m['local_name']]);
 				}
 			}
 			foreach ($this->model['self_ref'] as $self_ref) {
-				$sql="(SELECT " . $this->name . "1 AS id FROM " . $self_ref . " WHERE " . $this->name . "2='" . $this->id . "')";
-				$sql.="UNION (SELECT " . $this->name . "2 AS id FROM " . $self_ref . " WHERE " . $this->name . "1='" . $this->id . "')";
+				$sql="(SELECT `" . $this->name . "1` AS id FROM `" . $self_ref . "` WHERE `" . $this->name . "2`='" . $this->id . "')";
+				$sql.="UNION (SELECT `" . $this->name . "2` AS id FROM `" . $self_ref . "` WHERE `" . $this->name . "1`='" . $this->id . "')";
 				$this->data[$self_ref]=array();
 				foreach ($this->db->select($sql) as $row) {
 					$this->data[$self_ref][]=intval($row['id']);
@@ -151,7 +151,6 @@
 				$foreign_item->add_relation($foreign['field'], $this->id);
 			}
 
-			$this->data['update_date']=$_SERVER['REQUEST_TIME'];
 			$this->data=$update + $this->data;
 
 			unset($this->adb->ROW[$this->name][$this->id], $this->adb->LIST[$this->name], $this->adb->COUNT[$this->name]);
@@ -174,8 +173,8 @@
 			foreach ($this->model['many_to_many'] as $m2m) {
 				if ($field!=$m2m['local_name']) {continue;}
 
-				$sql[]=$m2m['type'] . ".id=" . $m2m['relation_name'] . "." . $m2m['local_name'];
-				$sql[]=$m2m['relation_name'] . "." . $m2m['foreign_name'] . "='" . $this->id . "'";
+				$sql[]="`" . $m2m['type'] . "`.id=`" . $m2m['relation_name'] . "`.`" . $m2m['local_name'] . "`";
+				$sql[]="`" . $m2m['relation_name'] . "`.`" . $m2m['foreign_name'] . "`='" . $this->id . "'";
 				if ($condition!==false) {$sql[]='(' . $condition . ')';}
 
 				return $this->adb->count_join($m2m['type'], $m2m['relation_name'], implode(' AND ', $sql), $order);
@@ -184,8 +183,8 @@
 			foreach ($this->model['self_ref'] as $self_ref) {
 				if ($field!=$self_ref) {continue;}
 
-				$sql[0]="((" . $m2m['type'] . ".id" . $self_ref . "." . $this->name . "1 AND " . $self_ref . "." . $this->name . "2=" . $this->id . ")";
-				$sql[0].=" OR (" . $m2m['type'] . ".id" . $self_ref . "." . $this->name . "2 AND " . $self_ref . "." . $this->name . "1=" . $this->id . "))";
+				$sql[0]="((`" . $this->name . "`.id=`" . $self_ref . "`.`" . $this->name . "1` AND `" . $self_ref . "`.`" . $this->name . "2`='" . $this->id . "')";
+				$sql[0].=" OR (`" . $this->name . "`.id=`" . $self_ref . "`.`" . $this->name . "2` AND `" . $self_ref . "`.`" . $this->name . "1`='" . $this->id . "'))";
 				if ($condition!==false) {$sql[]='(' . $condition . ')';}
 
 				return $this->adb->count_join($this->name, $self_ref, implode(' AND ', $sql), $order);
@@ -208,8 +207,8 @@
 			foreach ($this->model['many_to_many'] as $m2m) {
 				if ($field!=$m2m['local_name']) {continue;}
 
-				$sql[]=$m2m['type'] . ".id=" . $m2m['relation_name'] . "." . $m2m['local_name'];
-				$sql[]=$m2m['relation_name'] . "." . $m2m['foreign_name'] . "='" . $this->id . "'";
+				$sql[]="`" . $m2m['type'] . "`.id=`" . $m2m['relation_name'] . "`.`" . $m2m['local_name'] . "`";
+				$sql[]="`" . $m2m['relation_name'] . "`.`" . $m2m['foreign_name'] . "`='" . $this->id . "'";
 				if ($condition!==false) {$sql[]='(' . $condition . ')';}
 
 				return $this->adb->id_list_join($m2m['type'], $m2m['relation_name'], implode(' AND ', $sql), $order, $limit);
@@ -218,8 +217,8 @@
 			foreach ($this->model['self_ref'] as $self_ref) {
 				if ($field!=$self_ref) {continue;}
 
-				$sql[0]="((" . $m2m['type'] . ".id" . $self_ref . "." . $this->name . "1 AND " . $self_ref . "." . $this->name . "2=" . $this->id . ")";
-				$sql[0].=" OR (" . $m2m['type'] . ".id" . $self_ref . "." . $this->name . "2 AND " . $self_ref . "." . $this->name . "1=" . $this->id . "))";
+				$sql[0]="((`" . $this->name . "`.id=`" . $self_ref . "`.`" . $this->name . "1` AND `" . $self_ref . "`.`" . $this->name . "2`='" . $this->id . "')";
+				$sql[0].=" OR (`" . $this->name . "`.id=`" . $self_ref . "`.`" . $this->name . "2` AND `" . $self_ref . "`.`" . $this->name . "1`='" . $this->id . "'))";
 				if ($condition!==false) {$sql[]='(' . $condition . ')';}
 
 				return $this->adb->id_list_join($this->name, $self_ref, implode(' AND ', $sql), $order, $limit);

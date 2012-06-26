@@ -27,13 +27,13 @@
 		}
 
 		function update ($table, $data, $condition='TRUE') {
-			foreach ($data as $k=>$v) $data[$k]=$k . "='" . $this->escape($v) . "'";
-			if (!mysqli_query($this->conn, "UPDATE " . $table . " SET " . implode(', ', $data) . " WHERE " . $condition))
+			foreach ($data as $k=>$v) $data[$k]="`" . $k . "`='" . $this->escape($v) . "'";
+			if (!mysqli_query($this->conn, "UPDATE `" . $table . "` SET " . implode(', ', $data) . " WHERE " . $condition))
 				throw new Exception('MySQL update query error: ' . mysqli_error($this->conn));
 		}
 
 		function delete ($table, $condition) {
-			if (!mysqli_query($this->conn, "DELETE FROM " . $table . " WHERE " . $condition))
+			if (!mysqli_query($this->conn, "DELETE FROM `" . $table . "` WHERE " . $condition))
 				throw new Exception('MySQL delete query error: ' . mysqli_error($this->conn));
 		}
 
