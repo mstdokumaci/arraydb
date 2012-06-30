@@ -1,4 +1,4 @@
-<?php
+<?php namespace arraydb;
 
 	class CACHE {
 		private static $instance;
@@ -10,7 +10,7 @@
 			switch ($this->type) {
 				case 'apc':
 					if (!function_exists('apc_fetch'))
-						throw new Exception('APC extension is not installed');
+						throw new \Exception('APC extension is not installed');
 					break;
 				case 'memcached':
 					$this->conn=memcache_connect($conf['host'], $conf['port'], $conf['timeout']);
@@ -18,7 +18,7 @@
 				case 'file':
 					$this->path=$conf['path'];
 					if (!(is_readable($this->path) && is_writable($this->path)))
-						throw new Exception($this->path . ' directory must be readable and writable');
+						throw new \Exception($this->path . ' directory must be readable and writable');
 					break;
 				default:
 					$this->type='no-cache';
@@ -32,7 +32,7 @@
 
 		static function get_instance () {
 			if (!isset(self::$instance))
-				throw new Exception('You have to initialize this class before using');
+				throw new \Exception('You have to initialize this class before using');
 			return self::$instance;
 		}
 

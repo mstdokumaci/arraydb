@@ -11,9 +11,9 @@
 		'type'=>'file', 'path'=>dirname(dirname(dirname(__FILE__))) . DIRECTORY_SEPARATOR . 'cache'
 	);
 
-	DB::init($db_config);
-	CACHE::init($cache_config);
+	arraydb\DB::init($db_config);
+	arraydb\CACHE::init($cache_config);
 
-	ADB::init($model);
+	arraydb\ADB::init($model);
 
-	$adb=ADB::get_instance();
+	$adb=arraydb\ADB::get_instance();

@@ -1,6 +1,6 @@
-<?php
+<?php namespace arraydb;
 
-	class ITEM implements arrayaccess {
+	class ITEM implements \arrayaccess {
 		private static $ITEM;
 		private $name, $model, $id, $data;
 		private $db, $adb, $cache;
@@ -30,7 +30,7 @@
 				$sql="SELECT * FROM `" . $this->name . "` WHERE id='" . $this->id . "'";
 				$result=$this->db->select($sql);
 				if (!count($result))
-					throw new Exception('No ' . $this->name . ' found with id ' . $this->id);
+					throw new \Exception('No ' . $this->name . ' found with id ' . $this->id);
 
 				$this->data=$result[0];
 			}
@@ -64,14 +64,14 @@
 
 		function offsetget ($field) {
 			if (!isset($this->data[$field]))
-				throw new Exception('No field found as ' . $field);
+				throw new \Exception('No field found as ' . $field);
 
 			return $this->data[$field];
 		}
 
 		function offsetset ($field, $value) {
 			if (!(isset($this->model['fields'][$field])))
-				throw new Exception('No field found as ' . $field);
+				throw new \Exception('No field found as ' . $field);
 
 			$field_model=$this->model['fields'][$field];
 			if (isset($field_model['filter']) && function_exists($field_model['filter'])) {$value=eval('return ' . $field_model['filter'] . '($value);');}
@@ -98,13 +98,13 @@
 		}
 
 		function offsetunset ($field) {
-			throw new Exception('Field unset is not allowed.');
+			throw new \Exception('Field unset is not allowed.');
 		}
 
 		function add_relation ($field, $id) {
 			$id=intval($id);
 			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
-				throw new Exception($field . ' is not a relation field');
+				throw new \Exception($field . ' is not a relation field');
 
 			if (in_array($id, $this->data[$field])) return false;
 
@@ -115,7 +115,7 @@
 		function delete_relation ($field, $id) {
 			$id=intval($id);
 			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
-				throw new Exception($field . ' is not a relation field');
+				throw new \Exception($field . ' is not a relation field');
 
 			if (!in_array($id, $this->data[$field])) return false;
 
@@ -159,7 +159,7 @@
 
 		function count ($field, $condition=false, $order=false) {
 			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
-				throw new Exception($field . ' is not a relation field');
+				throw new \Exception($field . ' is not a relation field');
 
 			$sql=array();
 
@@ -193,7 +193,7 @@
 
 		function id_list ($field, $condition=false, $order=false, $limit=false) {
 			if (!isset($this->data[$field]) || !is_array($this->data[$field]))
-				throw new Exception($field . ' is not a relation field');
+				throw new \Exception($field . ' is not a relation field');
 
 			$sql=array();
 

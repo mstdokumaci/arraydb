@@ -1,4 +1,4 @@
-<?php
+<?php namespace arraydb;
 
 	require_once('cache.php');
 	require_once('db.php');
@@ -78,7 +78,7 @@
 
 		static function get_instance () {
 			if (!isset(self::$instance))
-				throw new Exception('You have to initialize this class before using');
+				throw new \Exception('You have to initialize this class before using');
 			return self::$instance;
 		}
 
@@ -89,7 +89,7 @@
 		}
 
 		function load ($name, $id) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			if (isset($this->ROW[$name][$id]))
 				return new ITEM($name, $this->DM[$name], $id, $this->ROW[$name][$id]);
@@ -98,7 +98,7 @@
 		}
 
 		function create ($name, $data) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			$item_model=$this->DM[$name];
 
@@ -128,7 +128,7 @@
 		}
 
 		function delete ($name, $id, $delete_belongings=false) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			$item_model=$this->DM[$name];
 
@@ -170,7 +170,7 @@
 		}
 
 		function relate ($name, $local_name, $id1, $id2) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			$m2m=array_shift(array_filter($this->DM[$name]['many_to_many'], function ($m2m) use ($local_name) {return $m2m['local_name']==$local_name;}));
 			if (empty($m2m)) return $this->self_relate($name, $local_name, $id1, $id2);
@@ -189,7 +189,7 @@
 		}
 
 		function unrelate ($name, $local_name, $id1, $id2) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			$m2m=array_shift(array_filter($this->DM[$name]['many_to_many'], function ($m2m) use ($local_name) {return $m2m['local_name']==$local_name;}));
 			if (empty($m2m)) return $this->self_unrelate($name, $local_name, $id1, $id2);
@@ -205,10 +205,10 @@
 		}
 
 		private function self_relate ($name, $local_name, $id1, $id2) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
-				throw new Exception('No defined relation to relate ' . $name . ' (' . $id1 . ') to ' . $local_name . ' (' . $id2 . ')');
+				throw new \Exception('No defined relation to relate ' . $name . ' (' . $id1 . ') to ' . $local_name . ' (' . $id2 . ')');
 
 			$item1=$this->load($name, $id1);
 			$item2=$this->load($name, $id2);
@@ -224,10 +224,10 @@
 		}
 
 		private function self_unrelate ($name, $local_name, $id1, $id2) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			if (!(in_array($local_name, $this->DM[$name]['self_ref'])))
-				throw new Exception('No defined relation to unrelate ' . $name . ' (' . $id1 . ') to ' . $local_name . ' (' . $id2 . ')');
+				throw new \Exception('No defined relation to unrelate ' . $name . ' (' . $id1 . ') to ' . $local_name . ' (' . $id2 . ')');
 
 			$condition="(`" . $name . "1`='" . $id1 . "' AND `" . $name . "2`='" . $id2 . "') OR (`" . $name . "1`='" . $id2 . "' AND `" . $name . "2`='" . $id1 . "')";
 			$this->db->delete($local_name, $condition);
@@ -240,10 +240,10 @@
 		}
 
 		function find_unique ($name, $field, $value) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
 			if (!isset($this->DM[$name]['fields'][$field]))
-				throw new Exception('No field as ' . $field . ' found for item ' . $name);
+				throw new \Exception('No field as ' . $field . ' found for item ' . $name);
 
 			$sql="SELECT * FROM `" . $name . "` WHERE `" . $field . "`='" . $this->db->escape($value) . "'";
 			$result=$this->db->select($sql);
@@ -314,7 +314,7 @@
 		}
 
 		private function prepare_select ($name, $condition=false, $order=false) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 			$item_model=$this->DM[$name];
 
 			$sql='SELECT * FROM `' . $name . '`';
@@ -326,7 +326,7 @@
 		}
 
 		private function prepare_join_select ($name, $table, $condition=false, $order=false) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 			$item_model=$this->DM[$name];
 
 			$sql='SELECT `' . $name . '`.* FROM `' . $name . '`, `' . $table . '`';
@@ -338,7 +338,7 @@
 		}
 
 		private function prepare_order ($name, $order) {
-			if (!isset($this->DM[$name])) throw new Exception('Undefined item name: ' . $name);
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 			$item_model=$this->DM[$name];
 
 			foreach (explode(',', $order) as $p) {

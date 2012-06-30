@@ -1,4 +1,4 @@
-<?php
+<?php namespace arraydb;
 
 	class DDL {
 		private $DM, $table;
@@ -76,9 +76,9 @@
 		private function get_field_type ($type, $len, $signed=false, $decimal=0) {
 			if ($type=='numeric' && $decimal) {
 				if ($decimal>=$len)
-					throw new Exception('Decimal length must be less than total length');
+					throw new \Exception('Decimal length must be less than total length');
 				if ($len>65)
-					throw new Exception('Decimal field length can be 65 at most');
+					throw new \Exception('Decimal field length can be 65 at most');
 				return 'DECIMAL (' . $len . ', ' . $decimal . ')';
 			}
 
@@ -95,7 +95,7 @@
 			$name=$types[$type][$more_types[0]];
 
 			if (empty($name))
-				throw new Exception('Field length is too much');
+				throw new \Exception('Field length is too much');
 
 			if ($signed) $len++;
 
