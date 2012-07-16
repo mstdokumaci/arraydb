@@ -88,6 +88,12 @@
 			$ddl->create_tables();
 		}
 
+		function fields ($name) {
+			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
+
+			return array_keys($this->DM[$name]['fields']);
+		}
+
 		function load ($name, $id) {
 			if (!isset($this->DM[$name])) throw new \Exception('Undefined item name: ' . $name);
 
@@ -135,8 +141,12 @@
 			$item=$this->load($name, $id);
 
 			foreach (array_filter($item_model['fields'], function ($el) {return $el['foreign']!==false;}) as $k=>$f) {
-				$foreign_item=$this->load($f['foreign']['type'], intval($item[$k]));
-				$foreign_item->delete_relation($f['foreign']['field'], $id);
+				try {
+					$foreign_item=$this->load($f['foreign']['type'], intval($item[$k]));
+					$foreign_item->delete_relation($f['foreign']['field'], $id);
+				} catch (\Exception $e) {
+					continue;
+				}
 			}
 			foreach ($item_model['has_many'] as $has_many) {
 				foreach ($item[$has_many['local_name']] as $foreign_id) {

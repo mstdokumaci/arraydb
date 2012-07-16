@@ -82,8 +82,11 @@
 			$this->db->update($this->name, $update, "id='" . $this->id . "'");
 
 			if ($field_model['foreign']!==false) {
-				$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($this->data[$field]));
-				$foreign_item->delete_relation($field_model['foreign']['field'], $this->id);
+				try {
+					$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($this->data[$field]));
+					$foreign_item->delete_relation($field_model['foreign']['field'], $this->id);
+				} catch (\Exception $e) {
+				}
 
 				if ($value!=0) {
 					$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($value));
@@ -99,6 +102,10 @@
 
 		function offsetunset ($field) {
 			throw new \Exception('Field unset is not allowed.');
+		}
+
+		function to_array () {
+			return $this->data;
 		}
 
 		function add_relation ($field, $id) {
