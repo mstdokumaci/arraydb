@@ -54,7 +54,7 @@
 		function count ($sql) {
 			if (!$result=mysqli_query($this->conn, $sql))
 				throw new \Exception('MySQL select query error: ' . mysqli_error($this->conn));
-			return mysqli_num_rows($result, MYSQLI_ASSOC);
+			return mysqli_num_rows($result);
 		}
 
 		function escape ($value) {

@@ -82,14 +82,15 @@
 			$this->db->update($this->name, $update, "id='" . $this->id . "'");
 
 			if ($field_model['foreign']!==false) {
-				try {
-					$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($this->data[$field]));
+				$fid=intval($this->data[$field]);
+				if ($fid) {
+					$foreign_item=$this->adb->load($field_model['foreign']['type'], $fid);
 					$foreign_item->delete_relation($field_model['foreign']['field'], $this->id);
-				} catch (\Exception $e) {
 				}
 
-				if ($value!=0) {
-					$foreign_item=$this->adb->load($field_model['foreign']['type'], intval($value));
+				$fid=intval($value);
+				if ($fid) {
+					$foreign_item=$this->adb->load($field_model['foreign']['type'], $fid);
 					$foreign_item->add_relation($field_model['foreign']['field'], $this->id);
 				}
 			}

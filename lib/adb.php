@@ -141,12 +141,10 @@
 			$item=$this->load($name, $id);
 
 			foreach (array_filter($item_model['fields'], function ($el) {return $el['foreign']!==false;}) as $k=>$f) {
-				try {
-					$foreign_item=$this->load($f['foreign']['type'], intval($item[$k]));
-					$foreign_item->delete_relation($f['foreign']['field'], $id);
-				} catch (\Exception $e) {
-					continue;
-				}
+				$fid=intval($item[$k]);
+				if (!$fid) continue;
+				$foreign_item=$this->load($f['foreign']['type'], $fid);
+				$foreign_item->delete_relation($f['foreign']['field'], $id);
 			}
 			foreach ($item_model['has_many'] as $has_many) {
 				foreach ($item[$has_many['local_name']] as $foreign_id) {
