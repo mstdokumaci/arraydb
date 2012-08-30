@@ -7,6 +7,7 @@
 		function __construct ($conf) {
 			if (!$this->conn=mysqli_connect($conf['hostname'], $conf['username'], $conf['password'], $conf['database']))
 				throw new \Exception('MySQL connection unsuccessfull. Config: ' . json_encode($conf) . ', Error: ' . mysqli_connect_error());
+			mysqli_set_charset($this->conn, 'utf8');
 		}
 
 		static function init ($conf) {
