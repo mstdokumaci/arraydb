@@ -1,20 +1,20 @@
 # Introduction
 
-I've seen many PHP ORM libraries. Most of them makes you write a new class for each item you want to keep in DB. This seems repetition of same things to me. Extending this, extending that for no different logic.
+I've seen many PHP ORM libraries. Most of them make you write a new class for each item you want to keep in the database. Extending this and that for no apparent reason is repetitious and capricious.
 
-Items have fields of data in similar kind and have similar relations among. So a well-written class can be used for all. If you need a library which makes things easier, this is my approach.
+Since items have fields of similar data and similar relations, a well-written class can be used for all. If you need a library which makes things easier, this is my approach.
 
-arrayDB ORM library has only 5 classes. You mostly use a singleton of one, others used internally, that's all. Caching and keeping cache synchronised with DB is all automated. You don't need to keep track of these.
+arrayDB ORM library has only 5 classes. You mostly use a singleton of one, while others are used internally, that's all. Caching and keeping cache synchronized with the database is all automated, you don't need to keep track of these.
 
-To start using this library, you have to do 3 simple definitions.
+To start using this library, you simply have to define:
 
-- Define your data model (what items you need to keep, what are their fields and their relations with each other).
-- Define your MySQL access.
-- Define your cache config.
+- Your data model (what items you need to keep, their fields and relations with each other).
+- Your MySQL access.
+- Your cache config.
 
 ## Defining data model
 
-All data model definiton is writing down an array like this:
+All data model definitions are written as an array like this:
 
 	$model=array(
 		'user'=>array(
@@ -81,7 +81,7 @@ There is an optional "prefix" parameter. It applied to cache keys if given.
 
 ## Start Using
 
-Time to use what we all defined. We just need these lines to initialize the library.
+Now it’s time to use what we defined. We just need these lines to initialize the library.
 
 	DB::init($db_config);
 	CACHE::init($cache_config);
@@ -120,7 +120,7 @@ We provide the name of item and an array of data by field names to create an ite
 
 ### Creating Many-to-many Relations
 
-First parameter is the name of the item. Second parameter is the local name of the related item. Third parameter is the id of the item. Fourth parameter is the id of the related item.
+The first parameter is the name of the item. The second parameter is the local name of the related item. The third parameter is the ID of the item, and the fourth parameter is the ID of the related item.
 
 	$adb->relate('user', 'friends', $uid1, $uid2);
 
@@ -221,10 +221,8 @@ For a separate post page, our code will be this simple:
 
 Is there any queries or cache logics in this code? No, that's the main goal, simplicity.
 
-There are a lot of famous alternatives to use. They are documented better and supported better. This library is not one of them, not a well oiled machine yet. But the most simple and easy to learn approach in my opinion. If the goal of ORM libraries is to isolate coder from DB logic, this one is the most assertive newcoming. jQuery was the easiest javascript framework and became a standard just because of that. So, an easy to use PHP ORM library has a chance that way.
+There are a lot of famous alternatives to use. They are documented better and supported better. This library is not one of them; it is not a well-oiled machine yet. But it is the most simple and easy to learn approach, in my opinion. If the goal of ORM libraries is to isolate coder from DB logic, this one is the most assertive one among the other new ones. jQuery was the easiest javascript framework and became a standard just because of that. So, an easy to use PHP ORM library has a chance that way.
 
 All ideas and contributions are welcomed.
-
-Thanks for the interest, sorry for inadequate English.
 
 Mustafa Dokumacı
