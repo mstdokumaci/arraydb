@@ -58,7 +58,7 @@
 		}
 
 
-		/** OFFSET FONKSİYONLARI **/
+		/** OFFSET FUNCTIONS **/
 
 		function offsetexists ($field) {return isset($this->data[$field]);}
 

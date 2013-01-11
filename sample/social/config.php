@@ -8,7 +8,7 @@
 	);
 
 	$cache_config=array(
-		'type'=>'file', 'path'=>dirname(dirname(dirname(__FILE__))) . DIRECTORY_SEPARATOR . 'cache'
+		'type'=>'apc'
 	);
 
 	arraydb\DB::init($db_config);
